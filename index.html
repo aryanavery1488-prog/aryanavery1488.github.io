@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Playlist Remixer V12</title>
+<title>Playlist Remixer</title>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1f;--mu:#6b6b72;--ac:#5b47e0;--ac2:#eeebff;--bd:#e2e0da;--ok:#1f8a4c;--on:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -142,6 +142,12 @@ body{padding-left:208px}
 @media(max-width:420px){.lib-toolbar{grid-template-columns:1fr}.lib-toolbar .lib-search{grid-column:auto}.lib-edit{grid-template-columns:1fr}.lib-edit .wide{grid-column:auto}.lib-bulk button{flex:1 1 100%}}
 @media(max-width:420px){.lib-row{grid-template-columns:22px 52px minmax(0,1fr);gap:7px}.album-art-wrap{--art-size:48px!important}.match-track{gap:7px}}
 
+
+/* ===== accessibility pass: contrast and target size (WCAG 2.2 AA) ===== */
+:root{--ok:#177a40;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ok:#4ccf84;--warn:#f2a65a}}
+:root[data-theme="dark"]{--ok:#4ccf84;--warn:#f2a65a}
+main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 </style>
 </head>
 <body>
@@ -153,10 +159,7 @@ body{padding-left:208px}
 
 <section class="card vw" id="v-home" data-views="home" aria-labelledby="hh"><h2 id="hh">Home</h2><div id="homeb"></div></section>
 
-<section class="card vw" id="v-sync" data-views="sync" aria-labelledby="sh"><h2 id="sh">Sync playlists</h2>
-<p><b>Status: not yet implemented.</b> Nothing on this page can sync anything yet, and no sync is running.</p>
-<p class="hint">Planned design (not built): link a source playlist to a destination playlist, one-way by default, never delete destination tracks automatically, and ask you before resolving any conflict. Sync will only be offered between services whose adapters can both read and write. Until then, use <b>Transfer Music</b> for one-time copies.</p>
-<div class="acts"><button type="button" data-go="transfer">Go to Transfer Music</button></div></section>
+<section class="card vw" id="v-sync" data-views="sync" aria-labelledby="sh"><h2 id="sh">Sync playlists</h2><div id="syncb"></div></section>
 
 
 
@@ -192,8 +195,8 @@ body{padding-left:208px}
 <div><label for="file">…or upload CSV / JSON / TXT files</label><input type="file" id="file" multiple accept=".csv,.json,.txt,.tsv"></div>
 <div style="flex:0 0 auto"><button id="add">Add to library</button> <button class="sec" id="demo">Try sample data</button></div>
 </div>
-<label class="hint" for="auto-enrich" style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--tx)"><input id="auto-enrich" type="checkbox" checked> Automatically find missing covers and music information online after importing</label>
-<p class="hint" style="margin:0 0 8px">When enabled, Playlist Remixer checks Spotify first (if you have connected it), then Apple’s public music catalog. If neither finds a confident match, it uses the song with the most similar title and marks it as a “closest title” guess. Only the title and artist (and ISRC if available) of the track being looked up are sent to the providers actually used for that lookup. Existing values are never overwritten automatically.</p>
+<label class="hint" for="auto-enrich" style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--tx)"><input id="auto-enrich" type="checkbox"> Find missing album covers online (off by default). For tracks shown on screen, the artist and title text is sent to Apple’s public iTunes Search (itunes.apple.com) and cover images load from Apple’s servers. Nothing is sent while this is off.</label>
+<p class="hint" style="margin:0 0 8px">When enabled, Playlist Remixer checks Spotify first (if you have connected it). Apple’s public music catalog is used only when Spotify does not return a confident match. If neither finds a confident match, it uses the song with the most similar title and marks it as a “closest title” guess. Only the title and artist (and ISRC if available) of the track being looked up are sent to the providers actually used for that lookup. Existing values are never overwritten automatically.</p>
 <div id="enrich-progress-wrap" class="enrich-progress" hidden><div class="enrich-progress-head"><strong id="enrich-progress-label">Finding cover artwork and track information</strong><span id="enrich-progress-count">0 of 0</span></div><div id="enrich-progress-track" class="enrich-progress-track" role="progressbar" aria-label="Online music lookup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="enrich-progress-fill" class="enrich-progress-fill"></div></div><p id="enrich-progress-detail" class="enrich-progress-detail">Waiting to start…</p></div>
 <details><summary>How do I get my data out of each service?</summary>
 <ul>
@@ -234,6 +237,7 @@ body{padding-left:208px}
 <div><label for="so">Order</label><select id="so"><option value="score">Best first</option><option value="bpm">BPM low → high</option><option value="mix">Harmonic mix (key + BPM)</option><option value="eup">Energy low → high</option><option value="edn">Energy high → low</option><option value="yr">Release year</option></select></div>
 </div>
 <div class="row" style="margin-top:10px"><div><label for="sx">Exclude (artist, title, genre… comma-separated)</label><input type="text" id="sx" placeholder="e.g. live, remix"></div><div><label for="sk">Only these keys (Camelot)</label><input type="text" id="sk" placeholder="e.g. 8A, 9A, 8B"></div></div>
+<details><summary>Pinned and excluded songs (<span id="pinsum"></span>)</summary><div id="pinbox"></div><p class="hint">Pinned songs always lead a smart playlist. Excluded songs never appear in smart playlists or “Find related”. Saved in this browser; not included in library backups.</p></details>
 <div class="acts" style="margin-top:12px"><button id="sg">Build smart playlist</button></div>
 <label for="seed">Find songs related to…</label>
 <div class="row"><div><input type="text" id="seed" placeholder="Part of a title or artist"></div><div style="flex:0 0 auto"><button class="sec" id="rl">Find related</button></div></div>
@@ -249,6 +253,10 @@ body{padding-left:208px}
 <p class="hint" data-views="home settings">Your library is saved in this browser only (“Clear library” erases it). The playlist tools do not upload your library. When automatic online metadata lookup is enabled, only the title, artist and available ISRC of tracks being looked up are sent to Apple’s public music catalog and, when you have already connected Spotify, Spotify’s catalog as a fallback; playlist names, the rest of your library and your account information are not sent by metadata lookup. When you choose to connect a service in “Transfer music”, the tracks of the playlist you pick are sent to that service for search and create/add requests. Connecting needs this page to be served over https; from a downloaded file everything else works offline. In the playlist tools, “better” means ranking, de-duplicating and re-sequencing the music you already have, plus pointing you to artists worth exploring. Use the export buttons, then import the result with Soundiiz or TuneMyMusic, or open the S/A/Z/P/Y links to find each song in a service.</p>
 </main>
 <script>
+/* V19 latency correction: non-blocking batch commits, one aggregate-index rebuild per batch, and skip redundant Apple broad search. */
+/* V18 performance pass: indexed per-run grouping, persistent enrichment cache,
+   deduplicated requests, bounded lookup concurrency, serialized Apple pacing,
+   batched commits/artwork events, and precomputed library search text. */
 const $=id=>document.getElementById(id);
 let lib=[],sep=new Set(),join=new Set(),ovr={},part={},alias={},rej=new Set(),aka={},skipT=new Set(),defer=new Set();
 const tid=()=>"t"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -311,7 +319,8 @@ async function initLib(){
 }
 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const norm=s=>{const r=String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");const n=r.replace(/\(.*?\)|\[.*?\]/g,"").replace(/\s-\s.*\b(remaster(?:ed)?|live|version|mix|edit)\b.*$/,"").replace(/[^\p{L}\p{N}]+/gu,"");return n||r.replace(/[^\p{L}\p{N}]+/gu,"")};
+const NORM_CACHE=new Map();
+const norm=s=>{const raw=String(s||"");if(NORM_CACHE.has(raw))return NORM_CACHE.get(raw);const r=raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");const n=r.replace(/\(.*?\)|\[.*?\]/g,"").replace(/\s-\s.*\b(remaster(?:ed)?|live|version|mix|edit)\b.*$/g,"").replace(/[^\p{L}\p{N}]+/gu,"");const result=n||r.replace(/[^\p{L}\p{N}]+/gu,"");NORM_CACHE.set(raw,result);if(NORM_CACHE.size>6000)NORM_CACHE.delete(NORM_CACHE.keys().next().value);return result};
 /* strict: the whole value must be a number ("120abc" and "1,5" are NOT numbers); "1,234" is read as 1234 */
 const num=v=>{if(v===null||v===undefined)return null;if(typeof v=="number")return isFinite(v)?v:null;let s=String(v).trim();if(s==="")return null;if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,"");if(!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s))return null;const n=Number(s);return isFinite(n)?n:null};
 const numN=v=>{const m=String(v==null?"":v).trim().match(/^(\d+)\s*\/\s*\d+$/);return m?+m[1]:num(v)};
@@ -342,14 +351,26 @@ const safeArtwork=v=>{if(typeof v!=="string")return null;const s=v.trim();if(!s|
    only recognized Apple catalog image hosts to HTTPS. Never upgrade arbitrary imports. */
 const appleArtwork=v=>{if(typeof v!=="string")return null;const raw=v.trim().replace(/\{w\}/g,"600").replace(/\{h\}/g,"600").replace(/\{f\}/g,"jpg");if(!raw||raw.length>2048||/[\u0000-\u0020<>"']/.test(raw))return null;try{const u=new URL(raw),h=u.hostname.toLowerCase(),trusted=/(^|\.)mzstatic\.com$/.test(h)||/(^|\.)itunes\.apple\.com$/.test(h);if(!trusted||!(["http:","https:"].includes(u.protocol)))return null;u.protocol="https:";return safeArtwork(u.href)}catch(e){return null}};
 const importArtwork=v=>safeArtwork(v)||appleArtwork(v);
+const artThumb=(u,size)=>{if(!u)return u;try{const x=new URL(u);if(!/(^|\.)mzstatic\.com$/i.test(x.hostname))return u;const px=size<=80?200:400,t=x.pathname.replace(/\/(\d{2,4})x(\d{2,4})(bb|cc|sr)?(-\d+)?\.(jpg|png|webp)$/i,(m,w,h,k,q,e)=>"/"+px+"x"+px+(k||"bb")+(q||"")+"."+e);if(t===x.pathname)return u;x.pathname=t;return x.href}catch(e){return u}};
 const coverMarkup=(track,size=56)=>{const u=safeArtwork(track&&track.art),from=track&&track.artFrom,link=(from==="Spotify"||from==="Apple Music")?safeArtwork(track.artLink):null;
  const ids=Array.isArray(track&&track.mem)?track.mem.map(x=>x&&x.id).filter(Boolean):[track&&(track.id||track.rid)].filter(Boolean),manual=!!(track&&track.prov&&track.prov.art&&track.prov.art.kind==="manual");
- const img=u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" onload="this.closest('.album-art-wrap').setAttribute('data-art-loaded','1');if(window.__plxArtworkLoaded)window.__plxArtworkLoaded(this.closest('.album-art-wrap').dataset.trackIds)" onerror="this.hidden=true;this.closest('.album-art').classList.add('no-art');this.closest('.album-art-wrap').setAttribute('data-art-error','1');this.closest('.album-art-wrap').title='Cover image failed to load. Use the online lookup retry or enter another image URL.';if(window.__plxArtworkFailed)window.__plxArtworkFailed(this.closest('.album-art-wrap').dataset.trackIds,this.closest('.album-art-wrap').dataset.artManual==='1')">`:"";
+ const thumb=u?artThumb(u,size):u,img=u?`<img src="${esc(thumb)}"${thumb!==u?` data-full="${esc(u)}"`:""} alt="" loading="lazy" decoding="async" onload="this.closest('.album-art-wrap').setAttribute('data-art-loaded','1');if(window.__plxArtworkLoaded)window.__plxArtworkLoaded(this.closest('.album-art-wrap').dataset.trackIds)" onerror="if(this.dataset.full&&this.src!==this.dataset.full){this.src=this.dataset.full;return}this.hidden=true;this.closest('.album-art').classList.add('no-art');this.closest('.album-art-wrap').setAttribute('data-art-error','1');this.closest('.album-art-wrap').title='Cover image failed to load. Use the online lookup retry or enter another image URL.';if(window.__plxArtworkFailed)window.__plxArtworkFailed(this.closest('.album-art-wrap').dataset.trackIds,this.closest('.album-art-wrap').dataset.artManual==='1')">`:"";
  const tile=`<span class="album-art"><span class="album-art-fallback" aria-hidden="true">♫</span>${img}</span>`;
  const credit=from==="Spotify"&&link?`<a class="art-credit" href="${esc(link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc((track&&track.t)||"track")} on Spotify"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1ed760"/><path d="M5.5 9.1c4.5-1.3 9.6-.8 13.1 1.3M6.5 12.1c3.8-1.1 8-.6 11 1.1M7.4 14.8c3-.8 6.2-.4 8.7.9" fill="none" stroke="#111" stroke-width="1.5" stroke-linecap="round"/></svg>Spotify</a>`:from==="Apple Music"&&link?`<a class="art-credit" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Apple Music</a>`:"";
  return `<div class="album-art-wrap" data-track-ids="${esc(ids.join(','))}" data-art-manual="${manual?'1':'0'}" style="--art-size:${size}px">${link?`<a class="album-art-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc((track&&track.t)||"track")} on ${esc(from)}">${tile}</a>`:tile}${credit}</div>`};
-window.__plxArtworkLoaded=(ids)=>{const keys=String(ids||"").split(",").filter(Boolean);let changed=0;for(const id of keys){const x=lib.find(t=>String(t.id)===id);if(!x)continue;if(x.artLoadFailed||x.artLoadFailCount){delete x.artLoadFailed;delete x.artLoadFailCount;if(x.enrichStatus==="art-load-error")x.enrichStatus="enriched";changed++}}if(changed){save();if(typeof libRefreshCache==="function")libRefreshCache()}};
-window.__plxArtworkFailed=(ids,manual)=>{if(manual)return;const keys=String(ids||"").split(",").filter(Boolean);let changed=0;for(const id of keys){const x=lib.find(t=>String(t.id)===id);if(!x||x.artLoadFailed||!safeArtwork(x.art))continue;x.artLoadFailed=true;x.artLoadFailCount=(Number(x.artLoadFailCount)||0)+1;x.enrichStatus="art-load-error";x.enrichPending=false;x.enrichTriedAt=Date.now();changed++}if(!changed)return;save();if(typeof ENRICH!=="undefined"&&ENRICH.cache)ENRICH.cache.clear();const st=$("enrich-status");if(st)st.textContent="A saved cover URL failed to load. The affected track is marked for an online artwork retry.";if(typeof libRefreshCache==="function")libRefreshCache();if(autoEnrichEnabled()&&navigator.onLine!==false&&keys.some(id=>{const x=lib.find(t=>String(t.id)===id);return x&&x.artLoadFailCount<=1})){setTimeout(()=>{const groups=enrichmentGroups(keys,true);if(groups.length)runEnrichment(groups)},700)}};
+const ARTWORK_EVENTS={latest:new Map(),timer:0};
+function queueArtworkEvents(ids,type,manual){if(type==="failed"&&manual)return;String(ids||"").split(",").filter(Boolean).forEach(id=>ARTWORK_EVENTS.latest.set(id,type));if(ARTWORK_EVENTS.timer)return;ARTWORK_EVENTS.timer=setTimeout(flushArtworkEvents,90)}
+function flushArtworkEvents(){ARTWORK_EVENTS.timer=0;const events=[...ARTWORK_EVENTS.latest.entries()];ARTWORK_EVENTS.latest.clear();if(!events.length)return;
+ const byId=new Map(lib.map(x=>[String(x.id),x]));let changed=0;const failed=[],retryIds=[];
+ for(const [id,type] of events){const x=byId.get(id);if(!x)continue;if(type==="loaded"){if(x.artLoadFailed||x.artLoadFailCount){delete x.artLoadFailed;delete x.artLoadFailCount;if(x.enrichStatus==="art-load-error")x.enrichStatus="enriched";changed++}}else{if(x.artLoadFailed||!safeArtwork(x.art))continue;x.artLoadFailed=true;x.artLoadFailCount=(Number(x.artLoadFailCount)||0)+1;x.enrichStatus="art-load-error";x.enrichPending=false;x.enrichTriedAt=Date.now();changed++;failed.push(id);if(x.artLoadFailCount<=1)retryIds.push(id)}}
+ if(!changed)return;save();
+ if(failed.length&&ENRICH.cache){const idset=new Set(failed),groups=aggregate().L.filter(g=>(g.mem||[]).some(m=>idset.has(String(m.id))));groups.forEach(g=>deleteEnrichCacheFor(g))}
+ const st=$("enrich-status");if(failed.length&&st)st.textContent="A saved cover URL failed to load. The affected track is marked for an online artwork retry.";
+ if(typeof libRefreshCache==="function")libRefreshCache();
+ if(retryIds.length&&autoEnrichEnabled()&&navigator.onLine!==false){setTimeout(()=>{const groups=enrichmentGroups(retryIds,true);if(groups.length)runEnrichment(groups)},700)}
+}
+window.__plxArtworkLoaded=(ids)=>queueArtworkEvents(ids,"loaded",false);
+window.__plxArtworkFailed=(ids,manual)=>queueArtworkEvents(ids,"failed",manual);
 const cln=v=>v==null?null:(String(v).replace(/[\u0000-\u001f\u007f]/g," ").trim().slice(0,300)||null);
 const boolOf=v=>{const x=String(v??"").trim().toLowerCase();return /^(true|1|yes|y|explicit|e)$/.test(x)?true:/^(false|0|no|n|clean|c|not explicit)$/.test(x)?false:null};
 function mk(get,src,pl){
@@ -496,7 +517,7 @@ function confirmImport(){
  const msg=`${inv||exc?"Imported "+added+" of "+(IMP.rows.length+inv)+" entries.":"Imported "+added+" entries."} Recordings: ${bL} → ${L.length}. Unresolved metadata conflicts: ${bC} → ${aC}. ${dn} decision${dn==1?"":"s"} applied during review.${exc?" "+exc+" excluded by you.":""}${inv?" "+inv+" invalid entr"+(inv==1?"y was":"ies were")+" not imported.":""}`;
  IMPSUM=`<p class="${inv?"warn":"ok"}" role="status">${esc(msg)}</p>`;
  const importedIds=a.inc.map(x=>x.id);IMP=null;chips();document.dispatchEvent(new Event("plremix:libchanged"));renderImport(true);$("stat").innerHTML=`<span class="${inv?"warn":"ok"}">${esc(msg)}</span>`;
- if(autoEnrichEnabled())queueAutoEnrichment(importedIds);
+ if(autoEnrichEnabled())setTimeout(scanCoverWraps,300);
 }
 
 /* ===== Online music metadata enrichment =====
@@ -506,11 +527,14 @@ function confirmImport(){
    missing fields only are filled. */
 const ENRICH_PREF="plremix:auto-enrich";
 const ENRICH_RETRY_MIGRATION="plremix:artwork-retry-v13";
-const ENRICH={running:false,controller:null,done:0,total:0,updated:0,unmatched:0,ambiguous:0,failed:0,lastRequest:0,cache:new Map(),queue:[]};
+const ENRICH={running:false,controller:null,done:0,total:0,updated:0,unmatched:0,ambiguous:0,failed:0,lastRequest:0,cache:new Map(),cacheAt:new Map(),cacheLoaded:false,cacheDirty:false,cacheChanges:0,invalidations:new Set(),inflight:new Map(),queue:[]};
+const ENRICH_CACHE_DB_KEY="enrich-cache-v1";
+const ENRICH_WORKERS=5;
 let ENRICH_CALLBACK_SEQ=0;
-function autoEnrichEnabled(){try{return localStorage.getItem(ENRICH_PREF)!=="0"}catch(e){return true}}
+function autoEnrichEnabled(){try{return localStorage.getItem(ENRICH_PREF)==="1"}catch(e){return false}} /* opt-in: off unless the person turned it on */
 function saveAutoEnrichPreference(v){try{localStorage.setItem(ENRICH_PREF,v?"1":"0")}catch(e){}}
-function enrichProgress(){const wrap=$("enrich-progress-wrap"),track=$("enrich-progress-track"),fill=$("enrich-progress-fill"),count=$("enrich-progress-count"),label=$("enrich-progress-label"),detail=$("enrich-progress-detail");if(!wrap)return;const total=Math.max(0,ENRICH.total||0),done=Math.min(total,Math.max(0,ENRICH.done||0)),pct=total?Math.round(done/total*100):0;wrap.hidden=total===0;if(fill)fill.style.width=pct+"%";if(track){track.setAttribute("aria-valuenow",String(pct));track.setAttribute("aria-valuetext",done+" of "+total+" tracks checked")}if(count)count.textContent=done+" of "+total;if(label)label.textContent=ENRICH.running?(ENRICH.current?"Looking up "+ENRICH.current:"Finding cover artwork and track information"):(done===total&&total?"Online lookup finished":"Online lookup paused");if(detail)detail.textContent=ENRICH.updated+" updated · "+ENRICH.unmatched+" no confident match · "+ENRICH.ambiguous+" need review · "+ENRICH.failed+" lookup errors"}
+let enrichProgressQueued=false;
+function enrichProgress(){if(enrichProgressQueued)return;enrichProgressQueued=true;const raf=window.requestAnimationFrame||((fn)=>setTimeout(fn,40));raf(()=>{enrichProgressQueued=false;const wrap=$("enrich-progress-wrap"),track=$("enrich-progress-track"),fill=$("enrich-progress-fill"),count=$("enrich-progress-count"),label=$("enrich-progress-label"),detail=$("enrich-progress-detail");if(!wrap)return;const total=Math.max(0,ENRICH.total||0),done=Math.min(total,Math.max(0,ENRICH.done||0)),pct=total?Math.round(done/total*100):0;wrap.hidden=total===0;if(fill)fill.style.width=pct+"%";if(track){track.setAttribute("aria-valuenow",String(pct));track.setAttribute("aria-valuetext",done+" of "+total+" tracks checked")}if(count)count.textContent=done+" of "+total;if(label)label.textContent=ENRICH.running?(ENRICH.current?"Looking up "+ENRICH.current:"Finding cover artwork and track information"):(done===total&&total?"Online lookup finished":"Online lookup paused");if(detail)detail.textContent=ENRICH.updated+" updated · "+ENRICH.unmatched+" no confident match · "+ENRICH.ambiguous+" need review · "+ENRICH.failed+" lookup errors"})}
 function enrichStatus(message,state){const st=$("enrich-status");if(st){st.textContent=message;st.dataset.state=state||"idle"}const top=$("stat");if(top)top.textContent=message;enrichProgress()}
 function updateEnrichButtons(){document.querySelectorAll('[data-lib-action="enrich-missing"]').forEach(b=>b.disabled=ENRICH.running);document.querySelectorAll('[data-lib-action="enrich-stop"]').forEach(b=>b.disabled=!ENRICH.running)}
 function enrichDelay(ms,signal){return new Promise((resolve,reject)=>{if(signal&&signal.aborted)return reject(new Error("Lookup stopped."));let t=0;const abort=()=>{if(t)clearTimeout(t);if(signal)signal.removeEventListener("abort",abort);reject(new Error("Lookup stopped."))};t=setTimeout(()=>{if(signal)signal.removeEventListener("abort",abort);resolve()},ms);if(signal)signal.addEventListener("abort",abort,{once:true})})}
@@ -526,47 +550,114 @@ function itunesJsonpRequest(term,country,signal,attribute){
   const abort=()=>finish(reject,new Error("Lookup stopped."));
   window[cb]=data=>{if(!data||!Array.isArray(data.results)){finish(reject,new Error("Apple's catalog returned an invalid response."));return}finish(resolve,data)};
   script.async=true;script.src=url.href;script.onerror=()=>finish(reject,new Error("Apple's catalog script request failed."));
-  timer=setTimeout(()=>finish(reject,new Error("Apple's catalog did not respond before the timeout.")),12000);
+  timer=setTimeout(()=>finish(reject,new Error("Apple's catalog did not respond before the timeout.")),6500);
   if(signal){if(signal.aborted)return abort();signal.addEventListener("abort",abort,{once:true})}
   document.head.appendChild(script);
  });
 }
-async function itunesFetchRequest(term,country,signal){
+async function itunesFetchRequest(term,country,signal,attribute){
  if(typeof fetch!=="function")throw new Error("This browser does not support fetch.");
- const url=new URL("https://itunes.apple.com/search");url.search=new URLSearchParams({term,entity:"song",media:"music",limit:"25",country}).toString();
+ const url=new URL("https://itunes.apple.com/search");url.search=new URLSearchParams(Object.assign({term,entity:"song",media:"music",limit:"25",country},attribute?{attribute}:{})).toString();
  const ctl=new AbortController(),onAbort=()=>ctl.abort();let timer=0;
  if(signal){if(signal.aborted)throw new Error("Lookup stopped.");signal.addEventListener("abort",onAbort,{once:true})}
- try{timer=setTimeout(()=>ctl.abort(),10000);const response=await fetch(url.href,{method:"GET",mode:"cors",credentials:"omit",headers:{Accept:"application/json"},signal:ctl.signal,cache:"no-store"});if(!response.ok)throw new Error("Apple's catalog returned HTTP "+response.status+".");const data=await response.json();if(!data||!Array.isArray(data.results))throw new Error("Apple's catalog returned an invalid response.");return data}
+ try{timer=setTimeout(()=>ctl.abort(),6500);const response=await fetch(url.href,{method:"GET",mode:"cors",credentials:"omit",headers:{Accept:"application/json"},signal:ctl.signal,cache:"no-store"});if(!response.ok)throw new Error("Apple's catalog returned HTTP "+response.status+".");const data=await response.json();if(!data||!Array.isArray(data.results))throw new Error("Apple's catalog returned an invalid response.");return data}
  finally{if(timer)clearTimeout(timer);if(signal)signal.removeEventListener("abort",onAbort)}
+}
+/* V20: paced concurrent Apple lookups. Requests start at least `gap` ms apart (reserved slots, not a
+   serial queue), at most `maxActive` run at once, identical queries share one response, and the gap
+   widens after failures and tightens again after successes. */
+const APPLE_LIMIT={gap:450,minGap:450,maxGap:2200,next:0,active:0,maxActive:4,waiters:[],preferFetch:false};
+const APPLE_RESP=new Map(),APPLE_RESP_MAX=600,APPLE_INFLIGHT=new Map();
+function appleAcquire(signal){
+ return new Promise((resolve,reject)=>{
+  if(signal&&signal.aborted)return reject(new Error("Lookup stopped."));
+  const grant=()=>{APPLE_LIMIT.active++;resolve()};
+  if(APPLE_LIMIT.active<APPLE_LIMIT.maxActive)return grant();
+  const w={grant,reject,signal,onAbort:null};
+  if(signal){w.onAbort=()=>{const i=APPLE_LIMIT.waiters.indexOf(w);if(i>=0)APPLE_LIMIT.waiters.splice(i,1);reject(new Error("Lookup stopped."))};signal.addEventListener("abort",w.onAbort,{once:true})}
+  APPLE_LIMIT.waiters.push(w);
+ });
+}
+function appleRelease(){
+ APPLE_LIMIT.active=Math.max(0,APPLE_LIMIT.active-1);
+ const w=APPLE_LIMIT.waiters.shift();if(w){if(w.signal&&w.onAbort)w.signal.removeEventListener("abort",w.onAbort);w.grant()}
+}
+async function appleTransport(term,attribute,signal){
+ const order=APPLE_LIMIT.preferFetch?["fetch","jsonp"]:["jsonp","fetch"];
+ let firstError=null;
+ for(let i=0;i<order.length;i++){
+  try{
+   const data=order[i]==="jsonp"?await itunesJsonpRequest(term,"us",signal,attribute):await itunesFetchRequest(term,"us",signal,attribute);
+   if(i===1&&firstError)APPLE_LIMIT.preferFetch=order[1]==="fetch";
+   return data;
+  }catch(e){if(signal&&signal.aborted)throw new Error("Lookup stopped.");if(!firstError)firstError=e;if(i===order.length-1)throw e}
+ }
+}
+function appleCatalogRequest(term,attribute,signal){
+ const key=(attribute||"")+"\u0001"+String(term).toLowerCase();
+ if(APPLE_RESP.has(key)){const v=APPLE_RESP.get(key);APPLE_RESP.delete(key);APPLE_RESP.set(key,v);return Promise.resolve(v)}
+ if(APPLE_INFLIGHT.has(key))return APPLE_INFLIGHT.get(key);
+ const p=(async()=>{
+  if(signal&&signal.aborted)throw new Error("Lookup stopped.");
+  const now=Date.now(),start=Math.max(now,APPLE_LIMIT.next);APPLE_LIMIT.next=start+APPLE_LIMIT.gap;
+  if(start>now)await enrichDelay(start-now,signal);
+  await appleAcquire(signal);
+  ENRICH.lastRequest=Date.now();
+  try{
+   const data=await appleTransport(term,attribute,signal);
+   APPLE_LIMIT.gap=Math.max(APPLE_LIMIT.minGap,Math.round(APPLE_LIMIT.gap*0.92));
+   APPLE_RESP.set(key,data);if(APPLE_RESP.size>APPLE_RESP_MAX)APPLE_RESP.delete(APPLE_RESP.keys().next().value);
+   return data;
+  }catch(e){
+   if(!(signal&&signal.aborted))APPLE_LIMIT.gap=Math.min(APPLE_LIMIT.maxGap,Math.round(APPLE_LIMIT.gap*1.8));
+   throw e;
+  }finally{appleRelease()}
+ })();
+ APPLE_INFLIGHT.set(key,p);
+ const done=()=>{if(APPLE_INFLIGHT.get(key)===p)APPLE_INFLIGHT.delete(key)};
+ p.then(done,done);
+ return p;
 }
 async function itunesSearchJSONP(track,signal){
  const title=String(track.t||"").trim(),artist=String(track.a||"").trim();if(!title)return{status:"none",provider:"Apple Music",candidates:[]};
- const queries=[{term:(title+" "+artist).trim(),attribute:null},{term:title,attribute:"songTerm"}];
+ const baseTitle=baseTrackTitle(title)||title,queries=[{term:(title+" "+artist).trim(),attribute:null},{term:baseTitle,attribute:"songTerm"}];
  let ambiguous=false,lastError=null,hadResponse=false,suggestions=[],fallback=null;
  for(let i=0;i<queries.length;i++){
   if(signal&&signal.aborted)throw new Error("Lookup stopped.");
-  const wait=Math.max(0,3100-(Date.now()-ENRICH.lastRequest));if(wait)await enrichDelay(wait,signal);
-  ENRICH.lastRequest=Date.now();let data;
-  try{
-   try{data=await itunesJsonpRequest(queries[i].term,"us",signal,queries[i].attribute)}
-   catch(jsonpError){if(signal&&signal.aborted)throw new Error("Lookup stopped.");data=await itunesFetchRequest(queries[i].term,"us",signal)}
-   hadResponse=true;
-  }catch(e){if(signal&&signal.aborted)throw new Error("Lookup stopped.");lastError=e;continue}
+  let data;
+  try{data=await appleCatalogRequest(queries[i].term,queries[i].attribute,signal);hadResponse=true}
+  catch(e){if(signal&&signal.aborted)throw new Error("Lookup stopped.");lastError=e;continue}
   const chosen=chooseAppleCandidate(track,data.results);
   if(chosen.status==="match")return{status:"match",provider:"Apple Music",item:chosen.item,score:chosen.score};
   if(chosen.status==="ambiguous")ambiguous=true;
   if(chosen.fallback&&(!fallback||chosen.fallback.titleSim>fallback.titleSim))fallback=chosen.fallback;
   if(chosen.candidates&&chosen.candidates.length){const seen=new Set(suggestions.map(x=>(x.trackName||"").toLowerCase()+"|"+(x.artistName||"").toLowerCase()+"|"+(x.collectionName||"").toLowerCase()));for(const c of chosen.candidates){const k=(c.trackName||"").toLowerCase()+"|"+(c.artistName||"").toLowerCase()+"|"+(c.collectionName||"").toLowerCase();if(!seen.has(k)){suggestions.push(c);seen.add(k)}}}
+  /* The review UI displays four candidates. If the first, more-specific query has already
+     supplied four, a broader second request cannot improve the review choices. */
+  if(i===0&&suggestions.length>=4)return{status:"ambiguous",provider:"Apple Music",candidates:suggestions.slice(0,4),fallback};
  }
  if(!hadResponse&&lastError)throw new Error("Apple catalog lookup could not complete: "+(lastError.message||String(lastError)));
  return{status:ambiguous||suggestions.length?"ambiguous":"none",provider:"Apple Music",candidates:suggestions.slice(0,4),fallback};
 }
+function baseTrackTitle(value){
+ return String(value==null?"":value)
+  .replace(/\s*[\(\[][^\)\]]*[\)\]]/g,"")
+  .replace(/\s-\s.*$/,"")
+  .replace(/["\u0000-\u001f]/g," ")
+  .replace(/\s+/g," ")
+  .trim()
+  .slice(0,120);
+}
+const SIMILARITY_CACHE=new Map();
 function enrichSimilarity(a,b){
- const x=norm(baseT(String(a||""))),y=norm(baseT(String(b||"")));if(!x||!y)return 0;if(x===y)return 1;
- if(Math.abs(x.length-y.length)>Math.max(8,Math.max(x.length,y.length)*0.35))return 0;
- let prev=Array.from({length:y.length+1},(_,i)=>i),cur=new Array(y.length+1);
- for(let i=1;i<=x.length;i++){cur[0]=i;for(let j=1;j<=y.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(x[i-1]===y[j-1]?0:1));const z=prev;prev=cur;cur=z}
- return Math.max(0,1-prev[y.length]/Math.max(x.length,y.length));
+ const x=norm(baseTrackTitle(a)),y=norm(baseTrackTitle(b));if(!x||!y)return 0;
+ const key=x<y?x+"\u0001"+y:y+"\u0001"+x;if(SIMILARITY_CACHE.has(key))return SIMILARITY_CACHE.get(key);
+ let result;if(x===y)result=1;
+ else if(Math.abs(x.length-y.length)>Math.max(8,Math.max(x.length,y.length)*0.35))result=0;
+ else{let prev=Array.from({length:y.length+1},(_,i)=>i),cur=new Array(y.length+1);
+  for(let i=1;i<=x.length;i++){cur[0]=i;for(let j=1;j<=y.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(x[i-1]===y[j-1]?0:1));const z=prev;prev=cur;cur=z}
+  result=Math.max(0,1-prev[y.length]/Math.max(x.length,y.length))}
+ SIMILARITY_CACHE.set(key,result);if(SIMILARITY_CACHE.size>10000)SIMILARITY_CACHE.delete(SIMILARITY_CACHE.keys().next().value);return result;
 }
 function rateAppleCandidate(source,r){
  const titleSim=enrichSimilarity(source.t,r.trackName);
@@ -664,78 +755,144 @@ function applyReviewedAppleCandidate(trackId,index){
  else enrichStatus("That match did not add any new fields. Existing metadata was left unchanged.");
 }
 function enrichmentGroups(ids,missingOnly=true){
- const idset=ids?new Set(ids.map(String)):null;
- return aggregate().L.filter(o=>(!idset||o.mem.some(m=>idset.has(String(m.id))))&&(!missingOnly||enrichNeeds(o))).map(o=>({ids:o.mem.map(m=>String(m.id)),track:{t:o.t,a:o.a,dur:o.dur,alb:o.alb,isrc:o.isrc}}));
+ const idset=ids?new Set(ids.map(String)):null,L=aggregate().L,out=[];
+ for(const o of L){if(idset&&!o.mem.some(m=>idset.has(String(m.id))))continue;if(missingOnly&&!enrichNeeds(o))continue;
+  out.push({ids:o.mem.map(m=>String(m.id)),track:{t:o.t,a:o.a,dur:o.dur,alb:o.alb,isrc:o.isrc,ver:o.ver,ex:o.ex}})
+ }
+ return out;
 }
+function enrichCacheKey(track){return [spotifyCatalogConnected()?"spotify-first":"apple-only",normA(track.a),norm(baseTrackTitle(track.t)),norm(track.alb||""),isrcOk(track.isrc)||"",track.dur==null?"":Math.round(track.dur),verKey(track),typeof track.ex==="boolean"?(track.ex?"explicit":"clean"):""].join("|")}
+function enrichCacheTtl(value){if(value&&value.guess)return 7*86400000;if(value&&value.status==="match")return 180*86400000;if(value&&value.status==="ambiguous")return 14*86400000;return 30*86400000}
+async function loadEnrichCache(){
+ if(ENRICH.cacheLoaded)return;ENRICH.cacheLoaded=true;
+ if(PERSIST.mode!=="idb")return;
+ try{const saved=await lget(ENRICH_CACHE_DB_KEY),now=Date.now();if(!saved||saved.version!==1||!Array.isArray(saved.entries))return;
+  for(const pair of saved.entries){if(!Array.isArray(pair)||pair.length!==2)continue;const k=pair[0],entry=pair[1];if(typeof k!=="string"||!entry||!entry.value)continue;
+   if(now-(Number(entry.at)||0)>enrichCacheTtl(entry.value))continue;ENRICH.cache.set(k,entry.value);ENRICH.cacheAt.set(k,Number(entry.at)||now)
+  }
+  ENRICH.invalidations.forEach(k=>{ENRICH.cache.delete(k);ENRICH.cacheAt.delete(k)});
+ }catch(e){}
+}
+async function persistEnrichCache(force=false){
+ if(!ENRICH.cacheDirty||PERSIST.mode!=="idb"||(!force&&ENRICH.cacheChanges<12))return;
+ const now=Date.now(),entries=[];
+ for(const [k,value] of ENRICH.cache){const at=ENRICH.cacheAt.get(k)||now;if(now-at<=enrichCacheTtl(value))entries.push([k,{at,value}])}
+ const trimmed=entries.slice(-1500);
+ try{await lput({[ENRICH_CACHE_DB_KEY]:{version:1,savedAt:now,entries:trimmed}});ENRICH.cacheDirty=false;ENRICH.cacheChanges=0}catch(e){}
+}
+function getEnrichCache(key){const value=ENRICH.cache.get(key);if(!value)return null;const at=ENRICH.cacheAt.get(key)||0;if(at&&Date.now()-at>enrichCacheTtl(value)){ENRICH.cache.delete(key);ENRICH.cacheAt.delete(key);ENRICH.cacheDirty=true;ENRICH.cacheChanges++;return null}return value}
+function setEnrichCache(key,value){ENRICH.cache.set(key,value);ENRICH.cacheAt.set(key,Date.now());ENRICH.cacheDirty=true;ENRICH.cacheChanges++;
+ if(ENRICH.cache.size>1800){const oldest=[...ENRICH.cache.keys()].slice(0,ENRICH.cache.size-1500);oldest.forEach(k=>{ENRICH.cache.delete(k);ENRICH.cacheAt.delete(k)})}
+}
+function deleteEnrichCacheFor(track){const key=enrichCacheKey(track);ENRICH.cache.delete(key);ENRICH.cacheAt.delete(key);ENRICH.invalidations.add(key);ENRICH.cacheDirty=true;ENRICH.cacheChanges++;}
+async function resolveEnrichmentChoice(track,key,signal){
+ const cached=getEnrichCache(key);if(cached)return cached;
+ if(ENRICH.inflight.has(key))return ENRICH.inflight.get(key);
+ ENRICH.invalidations.delete(key);
+ const pending=(async()=>{
+  let appleError=null,spotifyError=null,sp=null,ap=null,chosen=null,providerResponded=false;
+  if(spotifyCatalogConnected()){try{sp=await PLX.retry(()=>findSpotifyMatch(track),{signal,max:3});providerResponded=true}catch(e){if(signal&&signal.aborted)throw new Error("Lookup stopped.");spotifyError=e}}
+  if(sp&&sp.status==="match")chosen=sp;
+  if(!chosen){try{ap=await itunesSearchJSONP(track,signal);providerResponded=true}catch(e){if(signal&&signal.aborted)throw new Error("Lookup stopped.");appleError=e}
+   if(ap&&ap.status==="match")chosen=ap;
+   else if(ap&&ap.status==="ambiguous"&&ap.candidates&&ap.candidates.length)chosen=ap;
+  }
+  if(!providerResponded){const reason=[appleError&&("Apple: "+appleError.message),spotifyError&&("Spotify: "+spotifyError.message)].filter(Boolean).join("; ");throw new Error(reason||"No music catalog could be reached.")}
+  if(!chosen){const fbs=[sp&&sp.fallback&&Object.assign({provider:"Spotify"},sp.fallback),ap&&ap.fallback&&Object.assign({provider:"Apple Music"},ap.fallback)].filter(Boolean).sort((x,y)=>y.titleSim-x.titleSim);
+   if(fbs.length)chosen={status:"match",provider:fbs[0].provider,item:fbs[0].item,score:fbs[0].titleSim,guess:true};
+   else chosen=ap||sp||{status:"none",provider:"Apple Music"}
+  }
+  setEnrichCache(key,chosen);return chosen;
+ })();
+ ENRICH.inflight.set(key,pending);
+ try{return await pending}finally{if(ENRICH.inflight.get(key)===pending)ENRICH.inflight.delete(key)}
+}
+function aggregateIndex(){const state=aggregate(),byId=new Map();state.L.forEach(o=>o.mem.forEach(m=>byId.set(String(m.id),o)));return{state,byId}}
+function identitySignature(group){return group.mem.map(m=>[m.id,m.t,m.a,isrcOk(m.isrc)||"",m.dur==null?"":m.dur,verKey(m),typeof m.ex==="boolean"?(m.ex?"explicit":"clean"):"",norm(m.fa||"")].join("\u001f")).join("\u001e")}
 async function runEnrichment(groups,options={}){
- if(ENRICH.running){const queued=new Set(ENRICH.queue.flatMap(x=>x.ids));groups.forEach(x=>{if(!x.ids.every(id=>queued.has(id))){ENRICH.queue.push(x);x.ids.forEach(id=>{queued.add(id);const row=lib.find(t=>String(t.id)===id);if(row)row.enrichPending=true})}});save();enrichStatus("Another lookup is running. New tracks have been added to the metadata lookup queue.","running");return}
+ if(ENRICH.running){const queued=new Set(ENRICH.queue.flatMap(x=>x.ids));groups.forEach(x=>{if(!x.ids.every(id=>queued.has(id))){ENRICH.queue.push(x);x.ids.forEach(id=>{const row=lib.find(t=>String(t.id)===id);if(row)row.enrichPending=true})}});save();enrichStatus("Another lookup is running. New tracks have been added to the metadata lookup queue.","running");return}
  if(!groups.length){enrichStatus("Your library has no tracks that need the available online metadata fields.");return}
  if(navigator.onLine===false){if(autoEnrichEnabled()){groups.forEach(g=>g.ids.forEach(id=>{const x=lib.find(t=>String(t.id)===id);if(x)x.enrichPending=true}));save();enrichStatus("You are offline. These tracks are queued; they will be looked up when the app comes online.")}else enrichStatus("You are offline. Reconnect to the internet, then use Find missing info online.");return}
  ENRICH.running=true;updateEnrichButtons();ENRICH.controller=new AbortController();ENRICH.done=0;ENRICH.total=groups.length;ENRICH.updated=0;ENRICH.unmatched=0;ENRICH.guessed=0;ENRICH.ambiguous=0;ENRICH.failed=0;ENRICH.current="";enrichProgress();
- const signal=ENRICH.controller.signal;let stopped=false,providerStopped=false,consecutiveErrors=0;
+ const signal=ENRICH.controller.signal;let stopped=false,providerStopped=false,consecutiveErrors=0,dirty=false,libRef=lib,libLength=lib.length;
+ let idx=aggregateIndex();const rowById=new Map(lib.map(x=>[String(x.id),x]));
+ const rebuild=()=>{idx=aggregateIndex();};
+ const currentFor=ref=>{for(const id of ref.ids){const found=idx.byId.get(String(id));if(found)return found}return null};
+ const markPending=(ref,value,status)=>ref.ids.forEach(id=>{const x=rowById.get(String(id));if(x){x.enrichPending=value;if(status)x.enrichStatus=status;dirty=true}});
  try{
-  for(let gi=0;gi<groups.length;gi++){
-   const ref=groups[gi];
+  await loadEnrichCache();
+  /* V21: pipelined batches. While one batch is being applied/waited on, the next batch's lookups are already running. */
+  let offset=0,ahead=null;
+  const buildBatch=()=>{const batch=[];
+   while(offset<groups.length&&batch.length<ENRICH_WORKERS){
+    const ref=groups[offset++],current=currentFor(ref);
+    if(!current||!enrichNeeds(current)||coverOffscreen(ref)){markPending(ref,false);ENRICH.done++;continue}
+    batch.push({ref,track:{t:current.t,a:current.a,dur:current.dur,alb:current.alb,isrc:current.isrc,ver:current.ver,ex:current.ex},key:enrichCacheKey(current)});
+   }
+   return{batch,run:null}};
+  const startBatch=batch=>Promise.all(batch.map(async item=>{try{return{chosen:await resolveEnrichmentChoice(item.track,item.key,signal)}}catch(error){return{error}}}));
+  for(;offset<groups.length||ahead;){
    if(signal.aborted){stopped=true;break}
-   const current=aggregate().L.find(o=>o.mem.some(m=>ref.ids.includes(String(m.id))));
-   if(!current||!enrichNeeds(current)){ref.ids.forEach(id=>{const x=lib.find(t=>String(t.id)===id);if(x)x.enrichPending=false});ENRICH.done++;ENRICH.current="";enrichProgress();continue}
-   ENRICH.current=current.t+" — "+current.a;enrichProgress();
-   const cacheKey=normA(current.a)+"|"+norm(baseT(current.t))+"|"+norm(current.alb||"")+"|"+(current.isrc||"")+"|"+(current.dur==null?"":Math.round(current.dur));
-   try{
-    let chosen=ENRICH.cache.get(cacheKey),providerResponded=!!chosen;
-    if(!chosen){
-     let appleError=null,spotifyError=null,sp=null,ap=null;chosen=null;
-     /* 1. Spotify first, when it is connected */
-     if(spotifyCatalogConnected()){try{sp=await findSpotifyMatch(current);providerResponded=true}catch(e){if(signal.aborted){stopped=true;break}spotifyError=e}}
-     if(sp&&sp.status==="match")chosen=sp;
-     /* 2. Apple's public catalog */
-     if(!chosen){
-      try{ap=await itunesSearchJSONP(current,signal);providerResponded=true}catch(e){if(signal.aborted){stopped=true;break}appleError=e}
-      if(ap&&ap.status==="match")chosen=ap;
-      else if(ap&&ap.status==="ambiguous"&&ap.candidates&&ap.candidates.length)chosen=ap; /* several close matches: keep the review step */
-     }
-     if(!providerResponded){const reason=[appleError&&("Apple: "+appleError.message),spotifyError&&("Spotify: "+spotifyError.message)].filter(Boolean).join("; ");throw new Error(reason||"No music catalog could be reached.")}
-     /* 3. Nothing found: use the song with the most similar title from either catalog (marked as a guess) */
-     if(!chosen){
-      const fbs=[sp&&sp.fallback&&Object.assign({provider:"Spotify"},sp.fallback),ap&&ap.fallback&&Object.assign({provider:"Apple Music"},ap.fallback)].filter(Boolean).sort((x,y)=>y.titleSim-x.titleSim);
-      if(fbs.length)chosen={status:"match",provider:fbs[0].provider,item:fbs[0].item,score:fbs[0].titleSim,guess:true};
-      else chosen=ap||sp||{status:"none",provider:"Apple Music"};
-     }
-     ENRICH.cache.set(cacheKey,chosen);
-    }
-    if(chosen.status==="error")throw new Error(chosen.message||"Online catalog lookup failed.");
-    let changed=0;
-    if(chosen.status==="match"){
-     changed=chosen.provider==="Spotify"?applySpotifyMetadata(current,chosen.item):applyAppleMetadata(current,chosen.item);
-     if(changed&&chosen.guess){ENRICH.guessed=(ENRICH.guessed||0)+1;current.mem.forEach(x=>{x.enrichedFrom=(x.enrichedFrom||"Online catalog")+" (closest title guess)";x.enrichGuess=true})}
-     if(changed){ENRICH.updated++;save();if(typeof libIdle==="function")await libIdle()}
-     else ENRICH.unmatched++;
-    }else if(chosen.status==="ambiguous"){
-     const kept=chosen.provider==="Apple Music"?saveAppleCandidates(current,chosen.candidates):0;
-     if(kept)ENRICH.ambiguous++;else ENRICH.unmatched++;
-    }else ENRICH.unmatched++;
-    current.mem.forEach(x=>{x.enrichPending=false;x.enrichTriedAt=Date.now();if(chosen.status==="none")x.enrichStatus="not-found";else if(chosen.status==="ambiguous"&&!x.enrichCandidates)x.enrichStatus="ambiguous";else if(chosen.status==="match")x.enrichStatus=x.artLoadFailed?"art-load-error":"enriched";delete x.enrichError});
-    save();if(typeof libIdle==="function")await libIdle();
-    ENRICH.done++;ENRICH.current="";consecutiveErrors=0;
-    enrichStatus("Finding missing music information: "+ENRICH.done+" of "+ENRICH.total+" checked · "+ENRICH.updated+" tracks updated.","running");
-   }catch(trackError){
+   if(lib!==libRef||lib.length!==libLength){libRef=lib;libLength=lib.length;rowById.clear();lib.forEach(x=>rowById.set(String(x.id),x));rebuild()}
+   let cur=ahead;ahead=null;
+   if(!cur){cur=buildBatch();if(cur.batch.length)cur.run=startBatch(cur.batch)}
+   const batch=cur.batch;
+   if(!batch.length){enrichProgress();if(dirty){save();if(typeof libIdle==="function")await libIdle();dirty=false}continue}
+   ENRICH.current=batch.length===1?batch[0].track.t+" — "+batch[0].track.a:batch.length+" tracks (Spotify-first lookup)";enrichProgress();
+   if(offset<groups.length){ahead=buildBatch();if(ahead.batch.length)ahead.run=startBatch(ahead.batch)}
+   const results=await cur.run;
+   if(lib!==libRef||lib.length!==libLength){libRef=lib;libLength=lib.length;rowById.clear();lib.forEach(x=>rowById.set(String(x.id),x));rebuild()}
+   let stopBatchAfter=-1,needsRebuild=false;
+   for(let bi=0;bi<batch.length;bi++){
     if(signal.aborted){stopped=true;break}
-    ENRICH.failed++;consecutiveErrors++;
-    current.mem.forEach(x=>{x.enrichPending=false;x.enrichTriedAt=Date.now();x.enrichStatus="lookup-error";x.enrichError=String(trackError&&trackError.message||trackError).slice(0,300)});
-    save();if(typeof libIdle==="function")await libIdle();ENRICH.done++;ENRICH.current="";
-    enrichStatus("Lookup failed for "+current.t+" — "+current.a+": "+(trackError&&trackError.message||String(trackError))+" · "+ENRICH.done+" of "+ENRICH.total+" checked.","running");
-    if(consecutiveErrors>=3){
-     providerStopped=true;
-     groups.slice(gi+1).forEach(g=>g.ids.forEach(id=>{const x=lib.find(t=>String(t.id)===id);if(x){x.enrichPending=true;x.enrichStatus="queued"}}));
-     save();break;
+    const item=batch[bi],ref=item.ref;let current=currentFor(ref);
+    if(!current){markPending(ref,false);ENRICH.done++;continue}
+    if(!enrichNeeds(current)){markPending(ref,false);ENRICH.done++;continue}
+    let result=results[bi];
+    const nowKey=enrichCacheKey(current);
+    if(nowKey!==item.key){try{result={chosen:await resolveEnrichmentChoice({t:current.t,a:current.a,dur:current.dur,alb:current.alb,isrc:current.isrc,ver:current.ver,ex:current.ex},nowKey,signal)}}catch(error){result={error}}}
+    ENRICH.current=current.t+" — "+current.a;
+    if(result.error){
+     const trackError=result.error;ENRICH.failed++;consecutiveErrors++;
+     current.mem.forEach(x=>{x.enrichPending=false;x.enrichTriedAt=Date.now();x.enrichStatus="lookup-error";x.enrichError=String(trackError&&trackError.message||trackError).slice(0,300)});dirty=true;
+     enrichStatus("Lookup failed for "+current.t+" — "+current.a+": "+(trackError&&trackError.message||String(trackError))+" · "+(ENRICH.done+1)+" of "+ENRICH.total+" checked.","running");
+    }else{
+     const chosen=result.chosen;let changed=0;
+     if(chosen.status==="error")throw new Error(chosen.message||"Online catalog lookup failed.");
+     const before=identitySignature(current);
+     if(chosen.status==="match"){
+      changed=chosen.provider==="Spotify"?applySpotifyMetadata(current,chosen.item):applyAppleMetadata(current,chosen.item);
+      if(changed&&chosen.guess){ENRICH.guessed=(ENRICH.guessed||0)+1;current.mem.forEach(x=>{x.enrichedFrom=(x.enrichedFrom||"Online catalog")+" (closest title guess)";x.enrichGuess=true})}
+      if(changed)ENRICH.updated++;else ENRICH.unmatched++;
+     }else if(chosen.status==="ambiguous"){
+      const kept=chosen.provider==="Apple Music"?saveAppleCandidates(current,chosen.candidates):0;
+      if(kept)ENRICH.ambiguous++;else ENRICH.unmatched++;
+     }else ENRICH.unmatched++;
+     current.mem.forEach(x=>{x.enrichPending=false;x.enrichTriedAt=Date.now();if(chosen.status==="none")x.enrichStatus="not-found";else if(chosen.status==="ambiguous"&&!x.enrichCandidates)x.enrichStatus="ambiguous";else if(chosen.status==="match")x.enrichStatus=x.artLoadFailed?"art-load-error":"enriched";delete x.enrichError});
+     dirty=true;consecutiveErrors=0;
+     if(identitySignature(current)!==before)needsRebuild=true;
     }
+    ENRICH.done++;ENRICH.current="";enrichProgress();
+    if(consecutiveErrors>=3){providerStopped=true;stopBatchAfter=bi;break}
+   }
+   if(needsRebuild)rebuild();
+   /* save() queues the latest full snapshot; let IndexedDB flush in the background
+      instead of blocking the next catalog batch on storage I/O. */
+   if(dirty){save();dirty=false}
+   if(providerStopped){if(ahead){ahead.batch.forEach(x=>{ENRICH.queue.push(x.ref);markPending(x.ref,true,"queued")});ahead=null}groups.slice(offset).forEach(ref=>markPending(ref,true,"queued"));
+    /* Anything in the current batch after the third consecutive failure has already been looked up and cached; queue it for a cache-backed commit next time. */
+    if(stopBatchAfter>=0)batch.slice(stopBatchAfter+1).forEach(x=>{ENRICH.queue.push(x.ref);markPending(x.ref,true,"queued")});
+    break;
    }
   }
  }catch(e){if(!signal.aborted)enrichStatus((e&&e.message)||"Online metadata lookup stopped unexpectedly.","error")}
- finally{ENRICH.running=false;ENRICH.controller=null;ENRICH.current="";updateEnrichButtons();enrichProgress();libRefreshCache();if(typeof libRenderRows==="function")libRenderRows();
+ finally{
+  if(dirty){save();if(typeof libIdle==="function")await libIdle()}
+  await persistEnrichCache(true);
+  ENRICH.running=false;ENRICH.controller=null;ENRICH.current="";updateEnrichButtons();enrichProgress();libRefreshCache();if(typeof libRenderRows==="function")libRenderRows();
   if(stopped)enrichStatus("Online metadata lookup stopped. Changes already saved were kept.");
   else if(providerStopped)enrichStatus("Stopped after three consecutive catalog lookup failures. Remaining tracks are queued; try again when you are online.","error");
-  else enrichStatus("Online metadata lookup finished: "+ENRICH.updated+" tracks updated"+(ENRICH.guessed?" ("+ENRICH.guessed+" by closest title only \u2014 worth a look)":"")+", "+ENRICH.unmatched+" not confidently matched, "+ENRICH.ambiguous+" ambiguous, "+ENRICH.failed+" lookup errors. Tracks with no similar title in any catalog were left unchanged.",ENRICH.failed?"error":"success");
+  else enrichStatus("Online metadata lookup finished: "+ENRICH.updated+" tracks updated"+(ENRICH.guessed?" ("+ENRICH.guessed+" by closest title only — worth a look)":"")+", "+ENRICH.unmatched+" not confidently matched, "+ENRICH.ambiguous+" ambiguous, "+ENRICH.failed+" lookup errors. Tracks with no similar title in either catalog were left unchanged.",ENRICH.failed?"error":"success");
   const queued=ENRICH.queue.splice(0);if(queued.length&&!stopped&&!providerStopped){setTimeout(()=>runEnrichment(queued),0)}
  }
 }
@@ -747,16 +904,33 @@ function queueAutoEnrichment(ids){
 }
 function enrichLibraryMissing(){if(ENRICH.running){enrichStatus("An online lookup is already running.","running");return}const groups=enrichmentGroups(null,true);runEnrichment(groups)}
 function stopEnrichment(){ENRICH.queue=[];if(ENRICH.controller)ENRICH.controller.abort()}
+/* V21: look up covers only for tracks whose cover tile is on screen (plus a small margin).
+   Tiles are watched with an IntersectionObserver; anything scrolled away before its turn is skipped. */
+const COVER_WRAPS=new Map(),COVER_TRIED=new Set();let coverIO=null,coverFlushTimer=0,coverScanTimer=0;
+function coverVisibleIds(){const s=new Set();for(const [el,st] of COVER_WRAPS){if(!el.isConnected){COVER_WRAPS.delete(el);if(coverIO)coverIO.unobserve(el);continue}if(st.vis)st.ids.forEach(id=>s.add(id))}return s}
+function coverOffscreen(ref){if(!ref.onscreen)return false;const v=coverVisibleIds();if(ref.ids.some(id=>v.has(id)))return false;ref.ids.forEach(id=>COVER_TRIED.delete(id));return true}
+function coverFlush(){coverFlushTimer=0;if(!autoEnrichEnabled()||navigator.onLine===false||LOADERR)return;
+ const vis=coverVisibleIds();if(!vis.size)return;
+ const byId=new Map(lib.map(x=>[String(x.id),x])),now=Date.now(),cool=30*86400000,ids=[];
+ for(const id of vis){if(COVER_TRIED.has(id))continue;const x=byId.get(id);if(!x)continue;
+  if(safeArtwork(x.art)&&!x.artLoadFailed)continue;
+  if(x.enrichTriedAt&&now-x.enrichTriedAt<cool&&!x.enrichPending&&!x.artLoadFailed&&x.enrichStatus!=="lookup-error")continue;
+  COVER_TRIED.add(id);ids.push(id)}
+ if(!ids.length)return;
+ const groups=enrichmentGroups(ids,true);if(!groups.length)return;
+ groups.forEach(g=>{g.onscreen=true});
+ enrichStatus("Finding covers for "+groups.length+" track"+(groups.length===1?"":"s")+" on screen…","running");
+ runEnrichment(groups)}
+function scanCoverWraps(){if(coverScanTimer)return;coverScanTimer=setTimeout(()=>{coverScanTimer=0;if(!autoEnrichEnabled()||!("IntersectionObserver" in window))return;
+ if(!coverIO)coverIO=new IntersectionObserver(es=>{let any=false;for(const e of es){const st=COVER_WRAPS.get(e.target);if(!st)continue;st.vis=e.isIntersecting;if(e.isIntersecting)any=true}if(any&&!coverFlushTimer)coverFlushTimer=setTimeout(coverFlush,350)},{rootMargin:"150px"});
+ document.querySelectorAll(".album-art-wrap").forEach(el=>{if(COVER_WRAPS.has(el)||el.querySelector("img"))return;const ids=(el.dataset.trackIds||"").split(",").filter(Boolean);if(!ids.length)return;COVER_WRAPS.set(el,{ids,vis:false});coverIO.observe(el)})},200)}
+try{new MutationObserver(scanCoverWraps).observe(document.body,{childList:true,subtree:true})}catch(e){}
 const autoEnrichControl=$("auto-enrich");if(autoEnrichControl){autoEnrichControl.checked=autoEnrichEnabled();autoEnrichControl.addEventListener("change",()=>{saveAutoEnrichPreference(autoEnrichControl.checked);if(autoEnrichControl.checked)resumePendingEnrichment();else enrichStatus("Automatic metadata lookup is off. You can still use Retry missing covers & info online in My Music.")})}
 const resumePendingEnrichment=()=>{if(!autoEnrichEnabled()||ENRICH.running||navigator.onLine===false||LOADERR)return;
  /* Retry previously unresolved catalogue lookups without overwriting imported or manually edited metadata. */
  let retryMigrationDone=false;try{retryMigrationDone=localStorage.getItem(ENRICH_RETRY_MIGRATION)==="1"}catch(e){}
  if(!retryMigrationDone){let reset=0;lib.forEach(x=>{if(!safeArtwork(x.art)&&(x.enrichStatus==="not-found"||x.enrichStatus==="ambiguous")&&x.enrichTriedAt){delete x.enrichTriedAt;delete x.enrichStatus;x.enrichPending=true;reset++}});if(!reset||save()){try{localStorage.setItem(ENRICH_RETRY_MIGRATION,"1")}catch(e){}}}
- const retryAfter=30*24*60*60*1000,now=Date.now();
- /* Include older self-imported tracks that were already in the browser before V11/V12.
-    Previously checked misses are cooled down for 30 days so every page load does not repeat them. */
- const ids=lib.filter(x=>x.enrichPending||((!safeArtwork(x.art)||x.artLoadFailed)&&(!x.enrichTriedAt||now-x.enrichTriedAt>retryAfter))).map(x=>String(x.id));
- if(ids.length){const groups=enrichmentGroups(ids,true);if(groups.length){groups.forEach(g=>g.ids.forEach(id=>{const x=lib.find(t=>String(t.id)===id);if(x)x.enrichPending=true}));save();enrichStatus("Checking "+groups.length+" imported tracks for missing covers and catalog details…","running");runEnrichment(groups)}}};
+ scanCoverWraps()};
 window.addEventListener("online",resumePendingEnrichment);
 document.addEventListener("plremix:libready",()=>setTimeout(resumePendingEnrichment,500));
 
@@ -791,7 +965,9 @@ function recKey(x){let b=baseKey(x);const seen=new Set();while(alias[b]&&!seen.h
  if(sep.has(b))b+="|"+String(x.t).trim().toLowerCase();if(part[x.id])b+="~"+part[x.id];return b}
 const MF=["t","e","tempo","v","key","mode","prod","lab","yr","fa","alb","art","isrc","dur","aa","at","sg","rd","ord","tn","dn","dz","sw","cm","pub","lang","ex","ver","rt"];
 const RK={manual:3,imported:1,estimated:0},kindOf=(x,f)=>x.man&&x.man[f]?"manual":x.est&&x.est[f]?"estimated":"imported";
+const PAIR="~pair~",pairTok=(a,b)=>PAIR+[String(a),String(b)].sort().join("|");
 function aggregate(LIB=lib){
+ const PJ=[];join.forEach(t=>{if(typeof t==="string"&&t.startsWith(PAIR)){const s=t.slice(PAIR.length).split("|");if(s.length===2)PJ.push(s)}});
  const groups=new Map();
  LIB.forEach((x,i)=>{const k=recKey(x);let a=groups.get(k);if(!a)groups.set(k,a=[]);a.push([x,i])});
  /* split a same-name group into separate recordings when ISRCs differ or durations differ by >3s */
@@ -800,6 +976,12 @@ function aggregate(LIB=lib){
   arr.forEach(([x,i])=>{const hit=jn?cl:cl.filter(c=>(!x.isrc||!c.isrc||x.isrc==c.isrc)&&(x.dur==null||c.dur==null||Math.abs(x.dur-c.dur)<=3)&&(x.ex==null||c.ex==null||x.ex===c.ex)&&(!x.fa||!c.fa||norm(x.fa)==norm(c.fa)));let c=hit.length==1?hit[0]:null; /* 0 or several candidates = ambiguous: keep separate */
    if(!c){c={k:k+"#"+cl.length,isrc:null,dur:null,ex:null,fa:null,m:[]};cl.push(c)}
    c.m.push([x,i]);if(x.isrc&&!c.isrc)c.isrc=x.isrc;if(x.dur!=null&&c.dur==null)c.dur=x.dur;if(x.ex!=null&&c.ex==null)c.ex=x.ex;if(x.fa&&!c.fa)c.fa=x.fa});
+  /* V21: "Approve: merge" on one pair merges just those two recordings, not every recording that shares the title and artist. */
+  if(PJ.length&&!jn&&cl.length>1){const at=new Map();cl.forEach(c=>c.m.forEach(([x])=>at.set(String(x.id),c)));
+   PJ.forEach(([p,q])=>{const A=at.get(p),B=at.get(q);if(!A||!B||A===B)return;
+    A.m=A.m.concat(B.m).sort((u,v)=>u[1]-v[1]);B.m.forEach(([x])=>at.set(String(x.id),A));
+    ["isrc","dur","ex","fa"].forEach(f=>{if(A[f]==null||A[f]==="")A[f]=B[f]});B.dead=true});
+   for(let n=cl.length-1;n>=0;n--)if(cl[n].dead)cl.splice(n,1)}
   cl.forEach(c=>clusters.push(c))});
  const aff={},L=[];
  clusters.sort((p,q)=>p.m[0][1]-q.m[0][1]).forEach(c=>{
@@ -859,7 +1041,7 @@ function links(x){const q=encodeURIComponent(x.a+" "+x.t),a=(u,l,n)=>`<a href="$
 function card(p,i){
  return `<section class="card pl"><h2><span>${esc(p.n)}</span><span class="chip">${p.t.length} tracks</span></h2><p class="d">${esc(p.d)}</p>
  <div class="acts"><button class="sm" onclick="cp(${i})">Copy list</button><button class="sm sec" onclick="dl(${i})">Download CSV</button><span class="ok" id="m${i}" role="status"></span></div>
- <div class="tl" tabindex="0" role="region" aria-label="${esc(p.n)} tracks">${p.t.map((x,j)=>`<div class="tr"><span class="n">${j+1}</span>${coverMarkup(x,40)}<div class="m"><b>${esc(x.t)}</b><span>${esc(x.a)} · on ${[...x.srcs].map(esc).join(", ")}${x.tempo?" · "+Math.round(x.tempo)+" BPM":""}${cam(x)?" · "+camTxt(cam(x)):""}${x.why?" · why: "+esc(x.why):""}</span></div><span class="lk">${links(x)}</span></div>`).join("")}</div></section>`;
+ <div class="tl" tabindex="0" role="region" aria-label="${esc(p.n)} tracks">${p.t.map((x,j)=>`<div class="tr"><span class="n">${j+1}</span>${coverMarkup(x,40)}<div class="m"><b>${esc(x.t)}</b><span>${esc(x.a)} · on ${[...x.srcs].map(esc).join(", ")}${x.tempo?" · "+Math.round(x.tempo)+" BPM":""}${cam(x)?" · "+camTxt(cam(x)):""}${x.why?" · why: "+esc(x.why):""}</span></div><span class="lk">${links(x)}</span><span><button class="sm sec" title="Pin: always lead smart playlists" aria-label="Pin ${esc(x.t)}" onclick="pinT(${i},${j},'p')">📌</button> <button class="sm sec" title="Exclude from smart playlists and related" aria-label="Exclude ${esc(x.t)}" onclick="pinT(${i},${j},'x')">🚫</button></span></div>`).join("")}</div></section>`;
 }
 function explore(ta){
  return `<section class="card"><h2>🧭 Artists worth exploring</h2><p class="d hint">Your top artists. Open a service’s “similar artists” or radio for each to find new music that fits your taste.</p>
@@ -892,6 +1074,16 @@ function mixOrder(arr){const pool=arr.slice(),res=[];if(!pool.length)return res;
  while(pool.length){const l=res[res.length-1];let bi=0,bs=-1;pool.forEach((x,i)=>{const s=2*kc(l,x)+1.5*bc(l,x)+.05*x.score;if(s>bs){bs=s;bi=i}});res.push(pool.splice(bi,1)[0])}
  return res}
 function show(p){window.PL=window.PL||[];const i=PL.length;PL.push(p);$("out").insertAdjacentHTML("afterbegin",card(p,i));goOut()}
+const PINK="plremix:pins";let PINS=(()=>{try{const d=JSON.parse(localStorage.getItem(PINK)||"{}"),ok=a=>Array.isArray(a)?a.filter(z=>z&&typeof z.k=="string"):[];return{p:ok(d.p),x:ok(d.x)}}catch(e){return{p:[],x:[]}}})();
+const tk=x=>norm(x.a)+"|"+norm(x.t),pinSave=()=>{try{localStorage.setItem(PINK,JSON.stringify(PINS))}catch(e){}};
+function pinT(i,j,m){const x=window.PL&&PL[i]&&PL[i].t[j];if(!x)return;const k=tk(x),o=m=="p"?"x":"p";
+ PINS[o]=PINS[o].filter(z=>z.k!=k);if(!PINS[m].some(z=>z.k==k))PINS[m].push({k,l:x.a+" – "+x.t});pinSave();pinUI();
+ $("stat").textContent=(m=="p"?"Pinned “":"Excluded “")+x.t+"”. It applies the next time you build a smart playlist or run Find related."}
+function pinDel(m,k){PINS[m]=PINS[m].filter(z=>z.k!=k);pinSave();pinUI()}
+function pinUI(){const e=$("pinbox");if(!e)return;const r=(m,ic)=>PINS[m].map(z=>`<div class="tr"><div class="m"><span>${ic} ${esc(z.l)}</span></div><button class="sm sec" data-k="${esc(z.k)}" onclick="pinDel('${m}',this.dataset.k)">Remove</button></div>`).join("");
+ e.innerHTML=PINS.p.length||PINS.x.length?r("p","📌")+r("x","🚫"):'<p class="hint">Nothing pinned or excluded yet. Use 📌 or 🚫 on a track in any playlist.</p>';
+ const c=$("pinsum");if(c)c.textContent=PINS.p.length+" pinned · "+PINS.x.length+" excluded"}
+pinUI();
 function smart(){
  if(!lib.length){$("stat").textContent="Add some music first.";return}
  const{L}=aggregate(),v=id=>{const s=$(id).value;return s===""?null:+s},R=[];
@@ -909,8 +1101,10 @@ function smart(){
  const ties=tieBreak;
  const by=c=>(a,b)=>c(a,b)||ties(a,b);
  const full=o=="bpm"?t.slice().sort(by(cmpField("tempo",1))):o=="eup"?t.slice().sort(by(cmpField("e",1))):o=="edn"?t.slice().sort(by(cmpField("e",-1))):o=="yr"?t.slice().sort(by(cmpField("yr",1))):o=="mix"?mixOrder(t.slice().sort(by((a,b)=>b.score-a.score))):spread(t.slice().sort(by((a,b)=>b.score-a.score)));
- t=full.slice(0,N);
- show({n:"🧩 Smart playlist",d:`${R.length} rule${R.length==1?"":"s"}, matching ${$("sm").value.toUpperCase()}. ${t.length} tracks.${xq.length?" Excluding: "+xq.join(", ")+".":""} ${seqTxt(t)}`,t});
+ const pk=z=>PINS.p.some(q=>q.k==tk(z)),xk=z=>PINS.x.some(q=>q.k==tk(z)),pin=L.filter(z=>pk(z)&&!xk(z)).slice(0,N);
+ t=[...pin,...full.filter(z=>!xk(z)&&!pk(z)).slice(0,Math.max(0,N-pin.length))];
+ if(!t.length){$("stat").textContent="Every matching track is excluded. Remove some exclusions under “Pinned and excluded songs”.";return}
+ show({n:"🧩 Smart playlist",d:`${R.length} rule${R.length==1?"":"s"}, matching ${$("sm").value.toUpperCase()}. ${t.length} tracks.${xq.length?" Excluding: "+xq.join(", ")+".":""} ${PINS.p.length+PINS.x.length?" Pins and exclusions applied ("+PINS.p.length+" pinned, "+PINS.x.length+" excluded).":""} ${seqTxt(t)}`,t});
 }
 const WT=[["a","Artist",3],["p","Producer",3],["l","Label",1.5],["g","Genre",2],["b","BPM",2],["k","Key",2],["e","Energy",1]];
 function initW(){$("wts").innerHTML=WT.map(([k,n,d])=>`<div><label for="w_${k}">${n}: <output id="o_${k}">${d}</output></label><input type="range" id="w_${k}" min="0" max="5" step="0.5" value="${d}" oninput="$('o_${k}').textContent=this.value"></div>`).join("")}
@@ -921,7 +1115,7 @@ function related(){
  const s=$("seed").value.trim().toLowerCase();if(!lib.length||!s){$("stat").textContent="Add music and type part of a song or artist name.";return}
  const{L}=aggregate(),ex=x=>[x.t,x.a,x.a+" - "+x.t,x.a+" – "+x.t].some(z=>z.toLowerCase()==s)?0:1,a=L.filter(x=>(x.a+" "+x.t).toLowerCase().includes(s)).sort(sorter((p,q)=>ex(p)-ex(q),cmpNum(x=>x.score,-1)))[0];
  if(!a){$("stat").textContent="I couldn’t find that song in your library.";return}
- const t=L.filter(x=>x!==a).map(x=>{const r=relScore(a,x);return{...x,rs:r.s,why:r.why}}).sort(sorter(cmpNum(x=>x.rs,-1))).slice(0,20);
+ const t=L.filter(x=>x!==a&&!PINS.x.some(q=>q.k==tk(x))).map(x=>{const r=relScore(a,x);return{...x,rs:r.s,why:r.why}}).sort(sorter(cmpNum(x=>x.rs,-1))).slice(0,20);
  show({n:"🔗 Related to "+a.a+" – "+a.t,d:"Ranked with the weights under “Adjust what related means”. Each row says which factors matched.",t});
 }
 function seqTxt(t){let s=0,n=0;const m=Math.max(0,t.length-1);for(let i=0;i<m;i++){const a=t[i],b=t[i+1];if(cam(a)&&cam(b)&&a.tempo&&b.tempo){s+=(2*kc(a,b)+1.5*bc(a,b))/3.5;n++}}
@@ -954,7 +1148,7 @@ function cands(LIB=lib){const{L}=aggregate(LIB),out=[],pk=(p,q)=>[p.id,q.id].sor
  const push=(cls,p,q,c,acts)=>{const k=q?pk(p,q):p.id;if(rej.has(k)||seen.has(cls+k))return;seen.add(cls+k);out.push({cls,p,q,c,acts})};
  const byb=new Map();L.forEach(o=>{let a=byb.get(o.base);if(!a)byb.set(o.base,a=[]);a.push(o)});
  byb.forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){const c=conflictsOf(g[i],g[j]),dr=c.includes("different ISRC")||c.includes("explicit/clean differs");
-  push(dr?"Different recording":"Uncertain match",g[i],g[j],c,[{ty:"joinb",k:g[i].base,l:"Approve: merge"},{ty:"rejpair",key:pk(g[i],g[j]),l:"Reject: keep separate"}])}});
+  push(dr?"Different recording":"Uncertain match",g[i],g[j],c,[{ty:"joinp",a:g[i].id,b:g[j].id,l:"Approve: merge"},{ty:"rejpair",key:pk(g[i],g[j]),l:"Reject: keep separate"}])}});
  const byi=new Map();L.forEach(o=>{if(o.isrc){let a=byi.get(o.isrc);if(!a)byi.set(o.isrc,a=[]);a.push(o)}});
  byi.forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){if(g[i].base==g[j].base)continue;const c=conflictsOf(g[i],g[j]);
   push(c.length?"Uncertain match":"Strong duplicate candidate",g[i],g[j],c,[{ty:"alias",from:g[j].base,to:g[i].base,l:"Approve: merge"},{ty:"rejpair",key:pk(g[i],g[j]),l:"Reject: keep separate"}])}});
@@ -970,6 +1164,7 @@ function reviewHTML(){RV=[];const{L}=aggregate(),b=a=>{RV.push(a);return `<butto
  const sepd=new Map();lib.forEach(x=>{if(part[x.id]){const k=baseKey(x);let a=sepd.get(k);if(!a)sepd.set(k,a=[]);a.push(x)}});
  const sp=[...sepd].map(([k,a])=>{const f=a[0];const ids=lib.filter(x=>baseKey(x)==k).map(x=>x.id);return `<div class="tr"><div class="m"><span><strong>${esc(f.t)}</strong> — ${esc(f.a)} (kept separate by you)</span></div>${b({ty:"rejoin",ids,l:"Merge again"})}</div>`}).join("");
  const jn=[...join].filter(k=>L.some(o=>o.base==k)).map(k=>{const o=L.find(z=>z.base==k);return `<div class="tr"><div class="m"><span>${esc(o.a)} – ${esc(o.t)} (merged by you)</span></div>${b({ty:"unjoin",k,l:"Split again"})}</div>`}).join("");
+ const jp=[...join].filter(t=>typeof t==="string"&&t.startsWith(PAIR)).map(t=>{const ids=t.slice(PAIR.length).split("|"),o=L.find(z=>z.mem.some(m=>String(m.id)===ids[0])&&z.mem.some(m=>String(m.id)===ids[1]));return o?`<div class="tr"><div class="m"><span>${esc(o.a)} - ${esc(o.t)} (these two recordings merged by you)</span></div>${b({ty:"unjoin",k:t,l:"Split again"})}</div>`:""}).join("");
  const al=Object.entries(alias).filter(([f,t])=>L.some(o=>o.base==t)).map(([f,t])=>{const o=L.find(z=>z.base==t);return `<div class="tr"><div class="m"><span>${esc(o.a)} – ${esc(o.t)} (merged with another entry by you)</span></div>${b({ty:"unalias",from:f,l:"Undo merge"})}</div>`}).join("");
  CFS=[];const provL=p=>p?esc(p.kind+" · "+p.src+(p.pl?" › "+p.pl:"")):"unknown source",cf=[];
  L.forEach(o=>{if(defer.has(o.base))return;o.conf.forEach((c,ci)=>{const i=CFS.push({k:o.ok,f:c.f,kept:c.kept,v:c.v})-1;
@@ -984,7 +1179,7 @@ function reviewHTML(){RV=[];const{L}=aggregate(),b=a=>{RV.push(a);return `<butto
  const ak=Object.entries(aka).map(([f,t])=>`<span class="chip">${esc(f)} = ${esc(t)} <button class="sm sec" aria-label="Remove alias ${esc(f)}" onclick="akaDel('${esc(f).replace(/'/g,"")}')">×</button></span>`).join("");
  const af=`<details><summary>Artist aliases (${Object.keys(aka).length})</summary><p class="hint">Treat two artist names as the same artist when matching, e.g. “Prince” = “The Artist”. Names are compared ignoring case, accents, punctuation, “The” and “&”/“and”.</p><div class="row"><div><label for="aka1">Alias</label><input type="text" id="aka1"></div><div><label for="aka2">Same artist as</label><input type="text" id="aka2"></div><div style="flex:0 0 auto"><button class="sm" onclick="akaAdd()">Add alias</button></div></div><div class="chips">${ak}</div></details>`;
  const tb=cf.length?`<div class="row" role="group" aria-label="Conflict actions"><button class="sm sec" onclick="cfAll()">Select all conflicts</button><button class="sm" onclick="cfBulk('keep')">Keep Existing (selected)</button><button class="sm" onclick="cfBulk('use')">Use Imported (selected)</button><button class="sm" onclick="cfBulk('choose')">Apply individual choices</button></div>`:"";
- return `<h3 style="font-size:15px;margin:14px 0 4px">Needs your review</h3><p class="hint" role="status">${all.length} duplicate candidate${all.length==1?"":"s"}${all.length>RVN?" (first "+RVN+" shown)":""} · ${cf.length} metadata conflict${cf.length==1?"":"s"}. Nothing is merged, replaced or deleted until you choose. ${all.length>RVN?'<button class="sm sec" onclick="RVN+=80;dupes()">Show 80 more candidates</button> ':""}${UND?'<button class="sm sec" onclick="undoDec()">Undo last decision</button>':""}</p><div class="tl" tabindex="0" role="region" aria-label="Duplicate candidates">${cd+sp+jn+al||'<p class="hint">No duplicate candidates.</p>'}</div><h3 style="font-size:15px;margin:14px 0 4px">Metadata conflicts</h3>${tb}<div class="tl" tabindex="0" role="region" aria-label="Metadata conflicts">${cf.join("")||'<p class="hint">No metadata conflicts.</p>'}</div><details><summary>Your conflict decisions (${dcs.length})</summary><div class="tl">${dcs.join("")||'<p class="hint">None yet.</p>'}</div></details>`+pc+af}
+ return `<h3 style="font-size:15px;margin:14px 0 4px">Needs your review</h3><p class="hint" role="status">${all.length} duplicate candidate${all.length==1?"":"s"}${all.length>RVN?" (first "+RVN+" shown)":""} · ${cf.length} metadata conflict${cf.length==1?"":"s"}. Nothing is merged, replaced or deleted until you choose. ${all.length>RVN?'<button class="sm sec" onclick="RVN+=80;dupes()">Show 80 more candidates</button> ':""}${UND?'<button class="sm sec" onclick="undoDec()">Undo last decision</button>':""}</p><div class="tl" tabindex="0" role="region" aria-label="Duplicate candidates">${cd+sp+jn+jp+al||'<p class="hint">No duplicate candidates.</p>'}</div><h3 style="font-size:15px;margin:14px 0 4px">Metadata conflicts</h3>${tb}<div class="tl" tabindex="0" role="region" aria-label="Metadata conflicts">${cf.join("")||'<p class="hint">No metadata conflicts.</p>'}</div><details><summary>Your conflict decisions (${dcs.length})</summary><div class="tl">${dcs.join("")||'<p class="hint">None yet.</p>'}</div></details>`+pc+af}
 function cfAll(){const bx=[...document.querySelectorAll("#dup [data-cf]")],on=bx.some(x=>!x.checked);bx.forEach(x=>x.checked=on)}
 function cfBulk(mode){const ch=[];document.querySelectorAll("#dup [data-cf]").forEach(cb=>{const i=+cb.dataset.cf,c=CFS[i];if(!c)return;
   if(mode=="choose"){const r=document.querySelector(`#dup input[name=cr${i}]:checked`);if(r)ch.push([c,r.value=="k"?c.kept:c.v])}else if(cb.checked)ch.push([c,mode=="keep"?c.kept:c.v])});
@@ -992,7 +1187,7 @@ function cfBulk(mode){const ch=[];document.querySelectorAll("#dup [data-cf]").fo
  if(dec(()=>{ch.forEach(([c,val])=>{(ovr[c.k]=ovr[c.k]||{})[c.f]=val})}))$("stat").textContent=ch.length+" conflict"+(ch.length==1?"":"s")+" resolved. Unselected conflicts were left as they were."}
 function akaAdd(){const f=normA0($("aka1").value),t=normA0($("aka2").value);if(!f||!t||f==t){$("stat").textContent="Enter two different artist names.";return}dec(()=>{aka[f]=aka[t]||t})}
 function akaDel(f){dec(()=>{delete aka[f]})}
-function applyAct(a){if(a.ty=="joinb")join.add(a.k);else if(a.ty=="unjoin")join.delete(a.k);
+function applyAct(a){if(a.ty=="joinb")join.add(a.k);else if(a.ty=="joinp")join.add(pairTok(a.a,a.b));else if(a.ty=="unjoin")join.delete(a.k);
   else if(a.ty=="alias"){let t=a.to,n=0;while(alias[t]&&n++<50)t=alias[t];if(t!=a.from)alias[a.from]=t}
   else if(a.ty=="unalias")delete alias[a.from];else if(a.ty=="rejpair")rej.add(a.key);
   else if(a.ty=="sepc"){const src=[...new Set(a.ids.map(id=>(lib.find(x=>x.id==id)||{}).src))];a.ids.forEach(id=>{const x=lib.find(z=>z.id==id),n=src.indexOf(x.src);if(n>0)part[id]="s"+n})}
@@ -1211,13 +1406,18 @@ PLX.reset=it=>{it.user=false;if(it.m&&PLX.autoAccept(it.m.status)){it.decision="
 
 PLX.matchJob=async(job,A,o)=>{o=o||{};if(!A.caps.search)throw new PlxError(A.name+" cannot search its catalogue",{code:"unsupported"});
  job.state="matching";job.err=null;const cache=new Map();let n=job.items.filter(i=>i.m).length;
- try{for(const it of job.items){if(it.m)continue;if(o.signal&&o.signal.aborted){job.state="draft";return job}
-   const key=[normA(it.t.a),norm(it.t.t),verStr(it.t),isrcOk(it.t.isrc)||""].join("|");let cands=cache.get(key);
-   if(!cands){const raw=await PLX.retry(()=>PLX.call(A,"search",it.t),{sleep:o.sleep,signal:o.signal,max:o.max,refresh:A.refresh&&(()=>A.refresh()),random:o.random});
-    cands=(raw||[]).map(PLX.cleanCand).filter(Boolean);cache.set(key,cands)}
-   const m=PLX.match(it.t,cands);it.m=slimMatch(m);PLX.reset(it);n++;if(o.onProgress)o.onProgress({done:n,total:job.items.length});if(o.store&&n%25===0)o.store.put(job)}
-  job.state="ready";if(o.store)o.store.put(job);return job}
- catch(e){job.state="draft";job.err=e.message;if(o.store)o.store.put(job);throw e}};
+ const todo=job.items.filter(i=>!i.m),conc=Math.max(1,Math.min(Number(o.concurrency)||4,8));let next=0,failure=null,aborted=false;
+ const worker=async()=>{while(!failure&&!aborted){const it=todo[next++];if(!it)return;
+   if(o.signal&&o.signal.aborted){aborted=true;return}
+   try{const key=[normA(it.t.a),norm(it.t.t),verStr(it.t),isrcOk(it.t.isrc)||""].join("|");let pr=cache.get(key);
+    if(!pr){pr=PLX.retry(()=>PLX.call(A,"search",it.t),{sleep:o.sleep,signal:o.signal,max:o.max,refresh:A.refresh&&(()=>A.refresh()),random:o.random}).then(raw=>(raw||[]).map(PLX.cleanCand).filter(Boolean));cache.set(key,pr);pr.catch(()=>{if(cache.get(key)===pr)cache.delete(key)})}
+    const cands=await pr;
+    const m=PLX.match(it.t,cands);it.m=slimMatch(m);PLX.reset(it);n++;if(o.onProgress)o.onProgress({done:n,total:job.items.length});if(o.store&&n%25===0)o.store.put(job)
+   }catch(e){if(!failure)failure=e;return}}};
+ await Promise.all(Array.from({length:Math.min(conc,todo.length)},worker));
+ if(failure){job.state="draft";job.err=failure.message;if(o.store)o.store.put(job);throw failure}
+ if(aborted){job.state="draft";return job}
+ job.state="ready";if(o.store)o.store.put(job);return job};
 /* "Search again": add candidates from a manual query. The user's own pick is marked as theirs, never as an automatic match. */
 PLX.manualSearch=async(job,A,i,query,o)=>{o=o||{};const it=job.items[i];if(!it)throw new PlxError("No such item");
  const raw=await PLX.retry(()=>PLX.call(A,"search",{t:query.t||it.t.t,a:query.a||it.t.a}),{sleep:o.sleep,max:o.max});
@@ -1328,6 +1528,9 @@ PLX.reportCSV=job=>{const r=PLX.report(job),H=["#","Title","Artist","Match","You
  return"\uFEFF"+[H.map(h=>csvCell(h)).join(",")].concat(r.rows.map(x=>[x.n,x.title,x.artist,x.match,x.decision,x.result,x.destId,x.note].map(v=>csvCell(v,typeof v==="number")).join(","))).join("\r\n")};
 
 /* ---------- job storage (localStorage for now; same interface can sit on IndexedDB later) ---------- */
+/* If the browser blocks site storage, reading root.localStorage itself throws. Fall back to memory (lost on close) and say so. */
+const MEMLS=(()=>{const m=new Map();return{getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>{m.set(k,String(v))},removeItem:k=>{m.delete(k)}}})();
+PLX.lsBlocked=false;PLX.ls=()=>{try{const s=root.localStorage;if(!s)throw new Error("no storage");s.getItem("plremix:probe");PLX.lsBlocked=false;return s}catch(e){PLX.lsBlocked=true;return MEMLS}};
 PLX.makeStore=(storage,key)=>{key=key||"plremix:xfer";const read=()=>{try{const d=JSON.parse(storage.getItem(key)||"null");return d&&Array.isArray(d.jobs)?d.jobs:[]}catch(e){return null}};
  return{list(){return read()||[]},get(id){return(read()||[]).find(j=>j.id===id)||null},corrupt(){return read()===null},
   put(job){try{let jobs=read();if(jobs===null){try{storage.setItem(key+":corrupt",storage.getItem(key))}catch(e){return false}jobs=[]}
@@ -1347,8 +1550,8 @@ PLX.makeStore=(storage,key)=>{key=key||"plremix:xfer";const read=()=>{try{const 
 const PLX=root.PLX,E=(m,o)=>new PLX.Error(m,o);
 /* ---------- configuration & environment ---------- */
 const CFGKEY="plremix:plxcfg";
-PLX.cfg=()=>{let c={};try{c=JSON.parse(root.localStorage.getItem(CFGKEY)||"{}")||{}}catch(e){}return Object.assign({spotifyClientId:"",appleTokenUrl:"",appName:"Playlist Remixer",appBuild:"1"},root.PLX_CONFIG||{},c)};
-PLX.setCfg=o=>{let c={};try{c=JSON.parse(root.localStorage.getItem(CFGKEY)||"{}")||{}}catch(e){}["spotifyClientId","appleTokenUrl"].forEach(k=>{if(typeof o[k]==="string")c[k]=o[k].trim().slice(0,300)});try{root.localStorage.setItem(CFGKEY,JSON.stringify(c));return true}catch(e){return false}};
+PLX.cfg=()=>{let c={};try{c=JSON.parse(root.localStorage.getItem(CFGKEY)||"{}")||{}}catch(e){}return Object.assign({spotifyClientId:"",youtubeClientId:"",appleTokenUrl:"",appName:"Playlist Remixer",appBuild:"1"},root.PLX_CONFIG||{},c)};
+PLX.setCfg=o=>{let c={};try{c=JSON.parse(root.localStorage.getItem(CFGKEY)||"{}")||{}}catch(e){}["spotifyClientId","youtubeClientId","appleTokenUrl"].forEach(k=>{if(typeof o[k]==="string")c[k]=o[k].trim().slice(0,300)});try{root.localStorage.setItem(CFGKEY,JSON.stringify(c));return true}catch(e){return false}};
 PLX.env=()=>{const l=root.location||{},https=l.protocol==="https:",loop=/^(127\.0\.0\.1|\[::1\])$/.test(l.hostname||"");
  return{file:l.protocol==="file:",https,loopback:loop,secure:https||loop,online:root.navigator&&root.navigator.onLine!==undefined?root.navigator.onLine:true,redirectUri:(l.origin&&l.origin!=="null"?l.origin:"")+(l.pathname||"")}};
 const ss=()=>{try{return root.sessionStorage}catch(e){return null}};
@@ -1379,14 +1582,14 @@ PLX._pkce=async v=>b64u(await root.crypto.subtle.digest("SHA-256",new TextEncode
 const SPK="plx:spotify",SPO="plx:oauth",SPA="https://accounts.spotify.com";
 const spTok=()=>sget(SPK);
 const spNorm=x=>({pid:x.id,t:x.name,a:x.artists&&x.artists[0]&&x.artists[0].name||null,art:safeArtwork(x.album&&x.album.images&&x.album.images[Math.min(1,x.album.images.length-1)]&&x.album.images[Math.min(1,x.album.images.length-1)].url),artLink:safeArtwork(x.external_urls&&x.external_urls.spotify),artFrom:"Spotify",all:rows(x.artists,20).map(a=>a&&a.name).filter(Boolean),fa:rows(x.artists,20).slice(1).map(a=>a&&a.name).filter(Boolean).join(", ")||null,alb:x.album&&x.album.name||null,dur:typeof x.duration_ms==="number"?x.duration_ms/1000:null,isrc:x.external_ids&&x.external_ids.isrc||null,ex:typeof x.explicit==="boolean"?x.explicit:null,rd:x.album&&x.album.release_date||null,url:x.external_urls&&x.external_urls.spotify||null});
-PLX.SCOPE_WHY={"playlist-read-private":"see your private playlists","playlist-read-collaborative":"see playlists you collaborate on","playlist-modify-private":"create and change your private playlists","playlist-modify-public":"create and change your public playlists"};
+PLX.SCOPE_WHY={"user-library-read":"see your Liked Songs","playlist-read-private":"see your private playlists","playlist-read-collaborative":"see playlists you collaborate on","playlist-modify-private":"create and change your private playlists","playlist-modify-public":"create and change your public playlists"};
 const SP=PLX.register({id:"spotify",name:"Spotify",status:"auth",accountId:null,
  caps:{readPlaylists:true,readItems:true,search:true,createPlaylist:true,addItems:true,readDestination:true,publicPrivate:true},limits:{addBatch:100,searchLimit:10},
  notes:["Works from this file after a one-time, 3-step setup. Signing in means pasting one address back into the app.","Spotify only returns the contents of playlists you own or collaborate on.","Catalogue search returns at most 10 results per query.","Written against Spotify\u2019s Feb-2026 API docs; not yet tested with a real account."],
  isConnected(){const t=spTok();return!!(t&&(t.refresh||t.exp>Date.now()))},
  /* Separate purposes: "source" = read a playlist to transfer FROM; "destBrowse" = list your playlists to pick a destination; "destVerify" = read the destination back; "destWrite" = create/add (public playlists need modify-public, private need modify-private); "destination" = browse + verify + write together. */
  scopesFor(role,pub){const R="playlist-read-private",C="playlist-read-collaborative",W=pub?"playlist-modify-public":"playlist-modify-private";
-  switch(role){case"source":case"destBrowse":case"destVerify":return[R,C];case"destWrite":return[W];case"destination":return[R,C,W];default:return[R,C,W]}},
+  switch(role){case"source":case"destBrowse":case"destVerify":return[R,C];case"destWrite":return[W];case"liked":return["user-library-read"];case"destination":return[R,C,W];default:return[R,C,W]}},
  hasScopes(list){const t=spTok();return!!(t&&t.scope&&list.every(s=>t.scope.split(" ").includes(s)))},
  missingScopes(list){const t=spTok(),have=t&&t.scope?t.scope.split(" "):[];return list.filter(s=>!have.includes(s))},
  pubIds:new Set(),
@@ -1425,9 +1628,10 @@ const SP=PLX.register({id:"spotify",name:"Spotify",status:"auth",accountId:null,
  async listPlaylists(page,opt){SP.need(opt&&opt.role==="destination"?"destBrowse":"source");const off=page||0,r=await api("GET","/me/playlists",{query:{limit:50,offset:off}}),me=await SP.account();
   const items=rows(r&&r.items,50).filter(Boolean).map(p=>(p.id&&p.public===true&&SP.pubIds.add(p.id),{id:p.id,name:p.name||"(untitled)",total:(p.items&&p.items.total)??(p.tracks&&p.tracks.total)??null,owner:p.owner&&p.owner.id,collaborative:!!p.collaborative,public:typeof p.public==="boolean"?p.public:null,
    readable:!!((p.owner&&p.owner.id===me)||p.collaborative),why:(p.owner&&p.owner.id===me)||p.collaborative?"":"Spotify only shows the contents of playlists you own or collaborate on."}));
-  return{items,next:r&&r.next?off+50:null}},
- async getPlaylistItems(id,page){SP.need("source");return SP._items(id,page)},
- async _items(id,page){const off=page||0,r=await api("GET","/playlists/"+encodeURIComponent(id)+"/items",{query:{limit:50,offset:off}});
+  const lk=off===0&&!(opt&&opt.role==="destination")?[{id:"liked",name:"\u2665 Liked Songs (newest first)",total:null,owner:me,collaborative:false,public:null,readable:true,kind:"liked"}]:[];
+  return{items:lk.concat(items),next:r&&r.next?off+50:null}},
+ async getPlaylistItems(id,page){SP.need("source");if(id==="liked")SP.need("liked");return SP._items(id,page)},
+ async _items(id,page){const off=page||0,r=id==="liked"?await api("GET","/me/tracks",{query:{limit:50,offset:off}}):await api("GET","/playlists/"+encodeURIComponent(id)+"/items",{query:{limit:50,offset:off}});
   const items=rows(r&&r.items,50).map(x=>{const tr=x&&(x.item||x.track);if(!tr)return{t:"(unavailable item)",a:"",uns:"item no longer available"};
    if(tr.is_local)return{t:tr.name||"(local file)",a:tr.artists&&tr.artists[0]&&tr.artists[0].name||"",uns:"local file"};
    if(tr.type&&tr.type!=="track")return{t:tr.name||"(episode)",a:"",uns:tr.type};const n=spNorm(tr);return{t:n.t,a:n.a,fa:n.fa,alb:n.alb,art:n.art,artLink:n.artLink,artFrom:n.artFrom,dur:n.dur,isrc:n.isrc,ex:n.ex,ver:null,rid:n.pid}});
@@ -1447,7 +1651,8 @@ const SP=PLX.register({id:"spotify",name:"Spotify",status:"auth",accountId:null,
   const r=await api("POST","/playlists/"+encodeURIComponent(id)+"/items",{body:{uris:pids.map(p=>"spotify:track:"+p)}});
   if(!r||!r.snapshot_id)throw E("Spotify did not confirm the write (no snapshot id).",{code:"unconfirmed"});return r.snapshot_id},
  async getPlaylistContents(id){SP.need("destVerify");const all=await PLX.drain(async p=>{const r=await SP._items(id,p);return r});return all.map((x,i)=>x.rid||"~"+i) /* keep positions even for local files/episodes */}});
-async function ensureFresh(){const t=spTok();if(!t)throw E("Not connected to Spotify.",{status:401,code:"auth",provider:"spotify"});if(t.exp-30000<Date.now())await SP.refresh()}
+let spRefreshInFlight=null;
+async function ensureFresh(){const t=spTok();if(!t)throw E("Not connected to Spotify.",{status:401,code:"auth",provider:"spotify"});if(t.exp-30000<Date.now()){if(!spRefreshInFlight)spRefreshInFlight=SP.refresh().finally(()=>{spRefreshInFlight=null});await spRefreshInFlight}}
 async function api(m,path,o){o=o||{};await ensureFresh();const u=new URL("https://api.spotify.com/v1"+path);Object.entries(o.query||{}).forEach(([k,v])=>u.searchParams.set(k,v));
  try{return await http(u.toString(),{method:m,headers:Object.assign({Authorization:"Bearer "+spTok().access},o.body?{"Content-Type":"application/json"}:{}),body:o.body?JSON.stringify(o.body):undefined},"Spotify")}
  catch(e){if(e&&e.status===403&&/scope/i.test(e.message||""))throw E("Spotify says this sign-in doesn\u2019t include the permission needed for this step.",{code:"scope",missing:[],role:null,provider:"spotify"});throw e}}
@@ -1498,7 +1703,77 @@ const AP=PLX.register({id:"apple",name:"Apple Music",status:"auth",accountId:nul
  async getPlaylistContents(id){const all=await PLX.drain(p=>AP.getPlaylistItems(id,p));return all.map(x=>x.rid||("lib:"+x.t))}});
 
 /* ---------- services that cannot be offered yet (declared honestly; every capability is false) ---------- */
-PLX.register({id:"youtube",name:"YouTube (video playlists)",status:"none",caps:{},notes:["Not yet implemented.","YouTube\u2019s public API covers video playlists. That is not the same as full YouTube Music library or catalogue access, so it will be labelled as video-playlist support when added.","Use CSV import (Google Takeout) in the meantime."],isConnected:()=>false});
+/* ---------- YouTube (video playlists only; Google Identity Services token flow, access token kept in memory only) ---------- */
+const YT_ID=/^\d{6,}-[a-z0-9]+\.apps\.googleusercontent\.com$/i,YT_R="https://www.googleapis.com/auth/youtube.readonly",YT_W="https://www.googleapis.com/auth/youtube",YT_S={access:null,exp:0,scope:""};
+Object.assign(PLX.SCOPE_WHY,{[YT_R]:"see your YouTube playlists",[YT_W]:"create and change your YouTube playlists"});
+const ytOriginOk=()=>{const l=root.location||{};return l.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(l.hostname||"")};
+const ytSecsToReset=()=>{try{const p=new Intl.DateTimeFormat("en-US",{timeZone:"America/Los_Angeles",hour12:false,hour:"2-digit",minute:"2-digit",second:"2-digit"}).formatToParts(new Date()),g=t=>+((p.find(x=>x.type===t)||{}).value)||0;return Math.max(60,86400-((g("hour")%24)*3600+g("minute")*60+g("second")))}catch(e){return 3600}};
+const ytIso=s=>{const m=/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(String(s||""));if(!m)return null;const v=(+m[1]||0)*86400+(+m[2]||0)*3600+(+m[3]||0)*60+(+m[4]||0);return v>0?v:null};
+const YT_JUNK=/^(?:official(?:\s+(?:music\s+)?(?:video|audio|lyric\s+video|visuali[sz]er))?|(?:official\s+)?(?:music\s+)?video|lyrics?(?:\s+video)?|(?:official\s+)?audio|visuali[sz]er|hd|hq|4k|mv|m\/v)$/i;
+const ytClean=t=>String(t||"").replace(/\s*[\(\[]([^\)\]]*)[\)\]]/g,(m,inner)=>YT_JUNK.test(String(inner).trim())?"":m).replace(/\s+/g," ").trim();
+/* YouTube has no artist/title fields. "Artist - Topic" channels carry the real values; otherwise split "Artist - Title" and let the match review catch mistakes. */
+function ytSplit(title,channel){const ch=String(channel||""),topic=/\s-\sTopic$/i.test(ch),name=ch.replace(/\s-\sTopic$/i,"").replace(/VEVO$/i,"").trim(),t=ytClean(title);
+ if(topic)return{t,a:name};const m=/^(.{1,120}?)\s[\-\u2013\u2014]\s(.+)$/.exec(t);if(m)return{a:m[1].trim(),t:m[2].trim()};return{t,a:name}}
+function ytLive(){if(!YT_S.access)throw E("Not connected to YouTube. Please connect first.",{status:401,code:"auth",provider:"youtube"});
+ if(YT_S.exp-30000<Date.now())throw E("Your YouTube sign-in has expired (Google sign-ins last about an hour).",{status:401,code:"auth",provider:"youtube"})}
+async function ytFetch(m,path,o){o=o||{};ytLive();const u=new URL("https://www.googleapis.com/youtube/v3"+path);Object.entries(o.query||{}).forEach(([k,v])=>u.searchParams.set(k,v));
+ let r;try{r=await root.fetch(u.toString(),{method:m,headers:Object.assign({Authorization:"Bearer "+YT_S.access},o.body?{"Content-Type":"application/json"}:{}),body:o.body?JSON.stringify(o.body):undefined})}catch(e){throw E("YouTube: network error",{code:"network"})}
+ if(!r.ok){let reason="",msg="";try{const j=await r.json(),er=j&&j.error;msg=er&&er.message||"";reason=er&&er.errors&&er.errors[0]&&er.errors[0].reason||""}catch(e){}
+  if(r.status===403&&/quotaExceeded|dailyLimitExceeded/i.test(reason))throw E("YouTube\u2019s daily quota for this app is used up. It resets at midnight Pacific time; the transfer can be resumed after that.",{status:429,retryAfter:ytSecsToReset(),code:"quota",provider:"youtube"});
+  if(r.status===403&&/rateLimitExceeded|userRateLimitExceeded/i.test(reason)){const ra=r.headers&&r.headers.get?+r.headers.get("Retry-After"):0;throw E("YouTube is asking us to slow down.",{status:429,retryAfter:ra>0?ra:5})}
+  if(r.status===403&&/insufficientPermissions|insufficient authentication scopes/i.test(reason+" "+msg))throw E("YouTube hasn\u2019t been given permission to "+PLX.SCOPE_WHY[YT_W]+".",{code:"scope",missing:[YT_W],provider:"youtube"});
+  if(r.status===401)throw E("Your YouTube sign-in has expired or was revoked.",{status:401,code:"auth",provider:"youtube"});
+  throw E("YouTube "+r.status+(msg?": "+msg:"")+(reason?" ("+reason+")":""),{status:r.status})}
+ if(r.status===204)return null;try{return await r.json()}catch(e){return null}}
+async function ytDurations(ids){const out=new Map();ids=[...new Set(ids.filter(Boolean))];
+ for(let i=0;i<ids.length;i+=50){try{const r=await ytFetch("GET","/videos",{query:{part:"contentDetails",id:ids.slice(i,i+50).join(","),maxResults:50}});rows(r&&r.items,50).forEach(v=>{if(v&&v.id)out.set(v.id,ytIso(v.contentDetails&&v.contentDetails.duration))})}catch(e){if(e&&(e.status===401||e.code==="quota"||e.status===429))throw e}}
+ return out}
+let ytGisP=null;
+function ytLoadGIS(){if(root.google&&root.google.accounts&&root.google.accounts.oauth2)return Promise.resolve();
+ return ytGisP||(ytGisP=new Promise((res,rej)=>{const s=root.document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.onload=()=>res();s.onerror=()=>{ytGisP=null;rej(E("Couldn\u2019t load Google\u2019s sign-in script. Check your connection.",{code:"network"}))};root.document.head.appendChild(s)}))}
+const YT=PLX.register({id:"youtube",name:"YouTube (video playlists)",status:"partial",accountId:null,
+ caps:{readPlaylists:true,readItems:true,search:true,createPlaylist:true,addItems:true,readDestination:true,publicPrivate:true},limits:{addBatch:1,searchLimit:5},
+ notes:["Video playlists only \u2014 this is not YouTube Music library or catalogue access, and videos are matched by title, channel and length.","Needs this page on https (or 127.0.0.1 / localhost for testing) and a free Google Client ID you create once. It cannot work from a downloaded file.","Google\u2019s default quota is small: searches are capped at about 100 a day and each added song costs 50 of 10,000 daily units, so only about 100 songs can be transferred per day. Transfers pause and can be resumed after the quota resets.","Sign-ins last about an hour and are kept in memory only.","Written against Google\u2019s public API documentation; not yet tested with a real account."],
+ isConnected(){return!!(YT_S.access&&YT_S.exp>Date.now())},
+ scopesFor(role){switch(role){case"source":case"destBrowse":case"destVerify":return[YT_R];default:return[YT_W]}},
+ need(role,pub){if(!YT_S.access)throw E("Not connected to YouTube. Please connect first.",{status:401,code:"auth",provider:"youtube"});
+  const have=(YT_S.scope||"").split(" "),read=role==="source"||role==="destBrowse"||role==="destVerify",ok=read?(have.includes(YT_R)||have.includes(YT_W)):have.includes(YT_W);if(ok)return true;
+  const m=[read?YT_R:YT_W];throw E("YouTube hasn\u2019t been given permission to "+PLX.SCOPE_WHY[m[0]]+".",{code:"scope",missing:m,role,pub:!!pub,provider:"youtube"})},
+ async connect(o){o=o||{};const c=PLX.cfg();
+  if(!ytOriginOk())throw E("YouTube sign-in needs this page to be served over https (or opened from your own computer at http://127.0.0.1 or http://localhost). It cannot work from a downloaded file. Everything else still works.",{code:"origin"});
+  if(!YT_ID.test(c.youtubeClientId||""))throw E("Add your Google Client ID first \u2014 open the YouTube setup guide.",{code:"config"});
+  const have=(YT_S.scope||"").split(" ").filter(Boolean),scopes=[...new Set(YT.scopesFor(o.role||"source").concat(have))];
+  if(!(root.google&&root.google.accounts&&root.google.accounts.oauth2)){await ytLoadGIS();if(!(root.navigator.userActivation&&root.navigator.userActivation.isActive))throw E("Google\u2019s sign-in script has loaded. Press the button once more to open the sign-in window.",{code:"again"})}
+  const tok=await new Promise((res,rej)=>{const tc=root.google.accounts.oauth2.initTokenClient({client_id:c.youtubeClientId,scope:scopes.join(" "),include_granted_scopes:true,
+    callback:r=>r&&r.access_token&&!r.error?res(r):rej(E("YouTube sign-in was cancelled or denied"+(r&&r.error?" ("+r.error+")":"")+".")),
+    error_callback:e=>rej(E(e&&e.type==="popup_closed"?"The YouTube sign-in window was closed before finishing.":e&&e.type==="popup_failed_to_open"?"Your browser blocked the sign-in window. Allow pop-ups for this page and try again.":"YouTube sign-in failed."))});
+   tc.requestAccessToken({prompt:have.length?"":"consent"})});
+  YT_S.access=tok.access_token;YT_S.exp=Date.now()+(+tok.expires_in||3600)*1000;YT_S.scope=tok.scope||scopes.join(" ");YT.accountId=null;
+  try{await YT.account()}catch(e){YT.disconnect();throw e}return"connected"},
+ disconnect(){const t=YT_S.access;YT_S.access=null;YT_S.exp=0;YT_S.scope="";YT.accountId=null;try{if(t&&root.google&&root.google.accounts&&root.google.accounts.oauth2)root.google.accounts.oauth2.revoke(t,()=>{})}catch(e){}},
+ async account(){if(YT.accountId)return YT.accountId;const r=await ytFetch("GET","/channels",{query:{part:"id",mine:"true"}}),ch=rows(r&&r.items,1)[0];
+  if(!ch||!ch.id)throw E("This Google account has no YouTube channel, so it has no playlists to read or create. Create a channel on YouTube first.",{code:"nochannel"});YT.accountId=ch.id;return ch.id},
+ async listPlaylists(page){YT.need("source");const r=await ytFetch("GET","/playlists",{query:Object.assign({part:"snippet,contentDetails,status",mine:"true",maxResults:50},page?{pageToken:page}:{})});
+  const items=rows(r&&r.items,50).filter(p=>p&&p.id).map(p=>({id:p.id,name:p.snippet&&p.snippet.title||"(untitled)",total:p.contentDetails&&typeof p.contentDetails.itemCount==="number"?p.contentDetails.itemCount:null,owner:p.snippet&&p.snippet.channelId||null,collaborative:false,public:p.status&&p.status.privacyStatus==="public"?true:p.status&&p.status.privacyStatus==="private"?false:null,readable:true,why:""}));
+  return{items,next:r&&r.nextPageToken||null}},
+ async getPlaylistItems(id,page){YT.need("source");return YT._items(id,page)},
+ async _items(id,page){const r=await ytFetch("GET","/playlistItems",{query:Object.assign({part:"snippet,status",playlistId:id,maxResults:50},page?{pageToken:page}:{})}),list=rows(r&&r.items,50);
+  const vid=x=>x&&x.snippet&&x.snippet.resourceId&&x.snippet.resourceId.videoId||null,dur=await ytDurations(list.map(vid));
+  const items=list.map(x=>{const v=vid(x),sn=x&&x.snippet||{},title=sn.title||"";
+   if(!v||/^(deleted|private) video$/i.test(title))return{t:title||"(unavailable video)",a:"",uns:/^private/i.test(title)?"private video":"deleted or unavailable video"};
+   const s=ytSplit(title,sn.videoOwnerChannelTitle);return{t:s.t,a:s.a,fa:null,alb:null,art:null,dur:dur.get(v)||null,isrc:null,ex:null,ver:null,rid:v}});
+  return{items,next:r&&r.nextPageToken||null}},
+ async search(q){YT.need("destWrite");const t=qstr(q.t),a=qstr(q.a);if(!t)return[];
+  const r=await ytFetch("GET","/search",{query:{part:"snippet",type:"video",videoCategoryId:"10",maxResults:5,q:(t+" "+a).trim()}}),list=rows(r&&r.items,5).filter(x=>x&&x.id&&x.id.videoId),dur=await ytDurations(list.map(x=>x.id.videoId));
+  return list.map(x=>{const sn=x.snippet||{},s=ytSplit(sn.title,sn.channelTitle);return{pid:x.id.videoId,t:s.t,a:s.a,all:s.a?[s.a]:[],fa:null,alb:null,dur:dur.get(x.id.videoId)||null,isrc:null,ex:null,ver:null,rd:null,url:"https://www.youtube.com/watch?v="+encodeURIComponent(x.id.videoId),artFrom:"YouTube"}})},
+ async createPlaylist(spec){YT.need("destWrite",!!spec.public);const r=await ytFetch("POST","/playlists",{query:{part:"snippet,status"},body:{snippet:{title:String(spec.name||"Playlist").slice(0,150),description:String(spec.description||"").slice(0,5000)},status:{privacyStatus:spec.public?"public":"private"}}});
+  if(!r||!r.id)throw E("YouTube did not confirm the new playlist.",{code:"unconfirmed"});return{id:r.id,url:"https://www.youtube.com/playlist?list="+encodeURIComponent(r.id)}},
+ async findPlaylists(q){YT.need("destBrowse");const nm=String(q.name||"Playlist").slice(0,150),out=[];let page=null,n=0;
+  do{const r=await YT.listPlaylists(page);page=r.next;n++;r.items.forEach(p=>{if(p.name===nm&&p.total===0)out.push({id:p.id,name:p.name,total:0,owner:p.owner,public:p.public,collaborative:false,url:"https://www.youtube.com/playlist?list="+encodeURIComponent(p.id)})})}while(page&&n<20);return out},
+ async addItems(id,pids,opt){YT.need("destWrite",!!(opt&&opt.public));if(pids.length!==1)throw E("YouTube adds one video per request.",{code:"batch"});
+  const r=await ytFetch("POST","/playlistItems",{query:{part:"snippet"},body:{snippet:{playlistId:id,resourceId:{kind:"youtube#video",videoId:pids[0]}}}});
+  if(!r||!r.id)throw E("YouTube did not confirm the write (no item id).",{code:"unconfirmed"});return r.id},
+ async getPlaylistContents(id){YT.need("destVerify");const all=await PLX.drain(p=>YT._items(id,p));return all.map((x,i)=>x.rid||"~"+i)}});
 PLX.register({id:"amazon",name:"Amazon Music",status:"approval",caps:{},notes:["Amazon\u2019s Web API is in closed beta; live transfers are not available until access is granted and tested.","Use CSV/text import and export."],isConnected:()=>false});
 PLX.register({id:"pandora",name:"Pandora",status:"approval",caps:{},notes:["Pandora\u2019s developer API is partner-only; live transfers are not available.","Use CSV/text import and export."],isConnected:()=>false});
 })(typeof window!=="undefined"?window:globalThis);
@@ -1508,7 +1783,7 @@ PLX.register({id:"pandora",name:"Pandora",status:"approval",caps:{},notes:["Pand
 /*PLX ui — the Transfer Music wizard and transfer history. Pure DOM strings; every remote value is escaped. */
 (function(root){
 "use strict";
-const PLX=root.PLX,D=root.document,$=id=>D.getElementById(id),store=PLX.makeStore(root.localStorage);
+const PLX=root.PLX,D=root.document,$=id=>D.getElementById(id),store=PLX.makeStore(PLX.ls());
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const U=PLX.ui={S:{step:1,srcId:null,dstId:null,pls:null,sel:null,dstPls:null,dstSel:null,dstMode:"new",name:"",desc:"",pub:false,dedupe:false,job:null,filter:"all",page:0,busy:"",msg:"",err:"",ac:null,guide:null,spWait:false}};
 const S=U.S,PAGE=50;
@@ -1526,16 +1801,17 @@ function stat(a){const c=a.isConnected&&a.isConnected();return c?{t:"Connected",
 function capList(a){const c=a.caps,l=[];if(c.readPlaylists&&c.readItems)l.push("Read playlists");if(c.search)l.push("Search catalogue");if(c.createPlaylist&&c.addItems)l.push("Create playlists & add tracks");if(c.readDestination)l.push("Read back to verify");return l}
 function svcCard(a,role){const s=stat(a),canUse=role==="src"?PLX.canRead(a):PLX.canWrite(a),conn=a.isConnected&&a.isConnected();
  const btn=[];
- if(a.connect&&!conn&&(role==="src"?PLX.canRead(a):PLX.canWrite(a)))btn.push(`<button class="sm" onclick="plxConnect('${a.id}','${role}')">${a.id==="spotify"||a.id==="apple"?(ready(a.id)?"Connect":"Set up & connect"):"Connect"}</button>`);
+ if(a.connect&&!conn&&(role==="src"?PLX.canRead(a):PLX.canWrite(a)))btn.push(`<button class="sm" onclick="plxConnect('${a.id}','${role}')">${a.id==="spotify"||a.id==="apple"||a.id==="youtube"?(ready(a.id)?"Connect":"Set up & connect"):"Connect"}</button>`);
  if(conn&&a.disconnect)btn.push(`<button class="sm sec" onclick="plxDisconnect('${a.id}')">Disconnect</button>`);
  if(canUse&&conn)btn.push(`<button class="sm" onclick="plxUse('${a.id}','${role}')">Use as ${role==="src"?"source":"destination"}</button>`);
  const why=canUse?"":`<p class="hint" style="margin:6px 0">${role==="src"?"Can\u2019t be read directly here":"Not available as a destination"}. ${a.id==="local"?"":"Import a file instead."}</p>`;
  return`<div class="plx-c"><h3>${esc(a.name)}</h3><div class="plx-st${s.on?" on":""}">${esc(s.t)}</div><ul>${capList(a).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${why}<ul>${(a.notes||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul><div class="acts" style="margin:6px 0 0">${btn.join("")}</div></div>`}
 /* ---------- guided connection setup (one-time, per service) ---------- */
 if(!D.getElementById("plxcss2")){const st=D.createElement("style");st.id="plxcss2";st.textContent=".plx-gs{margin-top:16px;border-top:1px solid var(--bd);padding-top:12px}.plx-gs h3{margin:0 0 4px;font-size:15px}.plx-gl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}.plx-g{display:flex;gap:10px;border:1px solid var(--bd);border-radius:12px;padding:10px 12px}.plx-g.done{border-color:var(--ok)}.plx-g.bad{border-color:#b3261e}.plx-gi{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;background:var(--ac2);color:var(--ac)}.plx-g.done .plx-gi{background:var(--ok);color:var(--on)}.plx-g.bad .plx-gi{background:#b3261e;color:#fff}.plx-g>div{min-width:0;flex:1;font-size:13.5px}.plx-g p{margin:4px 0}.plx-code{display:block;word-break:break-all;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;font:12.5px/1.4 ui-monospace,Menlo,Consolas,monospace;margin:6px 0}pre.plx-code{white-space:pre;overflow:auto;max-height:260px;word-break:normal}.plx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.plx-g .row{align-items:end}.plx-fix{margin:8px 0 0;padding-left:18px;font-size:13px}";D.head.appendChild(st)}
-const SP_ID=/^[0-9a-f]{32}$/i,TOK_OK=v=>/^https:\/\/\S+$/i.test(v)||/^http:\/\/127\.0\.0\.1[:\/]\S*$/.test(v);
-const ready=id=>id==="apple"?cfgOk(id)&&PLX.env().secure:cfgOk(id);
-const cfgOk=id=>{const c=PLX.cfg();return id==="spotify"?SP_ID.test(c.spotifyClientId||""):id==="apple"?TOK_OK(c.appleTokenUrl||""):true};
+const YT_ID=/^\d{6,}-[a-z0-9]+\.apps\.googleusercontent\.com$/i,SP_ID=/^[0-9a-f]{32}$/i,TOK_OK=v=>/^https:\/\/\S+$/i.test(v)||/^http:\/\/127\.0\.0\.1[:\/]\S*$/.test(v);
+const ready=id=>id==="apple"?cfgOk(id)&&PLX.env().secure:id==="youtube"?cfgOk(id)&&ytOk():cfgOk(id);
+const ytOk=()=>{const l=root.location||{};return l.protocol==="https:"||/^(localhost|127\.0\.0\.1)$/.test(l.hostname||"")};
+const cfgOk=id=>{const c=PLX.cfg();return id==="spotify"?SP_ID.test(c.spotifyClientId||""):id==="youtube"?YT_ID.test(c.youtubeClientId||""):id==="apple"?TOK_OK(c.appleTokenUrl||""):true};
 const fileName=()=>{try{return decodeURIComponent((root.location.pathname||"").split("/").pop())||"index.html"}catch(e){return"index.html"}};
 const pageOrigin=()=>{const l=root.location||{};return l.origin&&l.origin!=="null"?l.origin:""};
 const stp=(st,title,body)=>`<li class="plx-g${st===true?" done":st===false?" bad":""}"><span class="plx-gi" aria-hidden="true">${st===true?"\u2713":st===false?"!":"\u25cb"}</span><div><b>${title}</b><span class="plx-sr"> \u2014 ${st===true?"done":st===false?"needs attention":"to do"}</span>${body}</div></li>`;
@@ -1550,7 +1826,7 @@ function spGuide(role){const e=PLX.env(),c=PLX.cfg(),idOk=SP_ID.test(c.spotifyCl
  stp(idOk?true:(c.spotifyClientId?false:null),"2. Paste your Client ID",`<p>On the app\u2019s Settings page, copy the <b>Client ID</b> (not the Client secret) and paste it here.</p><div class="row"><div><label for="plxcid">Spotify Client ID</label><input type="text" id="plxcid" value="${esc(c.spotifyClientId)}" autocomplete="off" spellcheck="false"></div><div style="flex:0 0 auto"><button class="sm" onclick="plxSaveCfg()">Save</button></div></div>`)+
  stp(conn?true:null,"3. Connect",conn?`<p class="ok">Connected. Press \u201cUse as source\u201d on the Spotify card above.</p>`:`<div class="acts"><button ${idOk?"":"disabled"} onclick="plxConnect('spotify','${role}')">Connect Spotify</button></div>${man?(wait?`<p><b>Spotify opened in a new tab.</b> If that tab says <i>\u201cInvalid redirect URI\u201d</i> (or \u201cNot matching configuration\u201d), the app on your Spotify dashboard doesn\u2019t match what was just sent: redirect address <code>${esc(sp.manualRU)}</code> and Client ID ending <code>${esc(String(c.spotifyClientId||"").slice(-4))}</code>. On the dashboard open the app with that Client ID \u2192 <b>Settings</b> \u2192 <b>Redirect URIs</b>, make sure that exact address is listed (no extra slash, no spaces), press <b>Add</b>, then <b>Save</b> at the bottom. Old addresses can stay. Then press Connect again.</p><p>If the tab worked, press <b>Agree</b> there. The next page will say <i>\u201cThis site can\u2019t be reached\u201d</i> \u2014 that is expected. Copy the <b>whole address</b> from that tab\u2019s address bar and paste it here:</p><label for="plxpaste">Address from the new tab</label><textarea id="plxpaste" rows="2" spellcheck="false" placeholder="http://127.0.0.1:8888/callback?code=\u2026&state=\u2026" style="min-height:0">${esc(S.spText||"")}</textarea><div class="acts" style="margin-top:6px"><button onclick="plxFinishSp()">Finish connecting</button>${sp.lastAuthUrl&&/^https:\/\/accounts\.spotify\.com\//.test(sp.lastAuthUrl)?`<a href="${esc(sp.lastAuthUrl)}" target="_blank" rel="noopener noreferrer">Tab didn\u2019t open? Open Spotify here</a>`:""}</div>`:`<p class="hint">You\u2019ll sign in once per visit: Spotify opens in a new tab and you paste one address back. This page stays open meanwhile.</p>`):`<p class="hint">You\u2019ll be sent to Spotify to approve, then brought straight back here.</p>`}`)+
  `</ol><details><summary>Something went wrong?</summary><ul class="plx-fix"><li><b>\u201cInvalid redirect URI\u201d / \u201cNot matching configuration\u201d</b> \u2014 the address in step 1 isn\u2019t saved in the app whose Client ID you pasted. Copy it again, press Add, then Save at the bottom of the dashboard page. An address from an older guide (ending in a file name or :8000) won\u2019t work.</li><li><b>\u201cInvalid client\u201d</b> \u2014 the Client ID is wrong. Re-copy it (not the secret).</li><li><b>Access denied, or a 403 error</b> \u2014 your email isn\u2019t in User management, or the app owner doesn\u2019t have Premium.</li><li><b>Can\u2019t create the app</b> \u2014 the account may be free-tier, or already owns an app.</li><li><b>A playlist is greyed out</b> \u2014 Spotify only shows tracks for playlists you own or collaborate on.</li></ul></details>`}
-const WORKER="// Apple Music developer-token service (Cloudflare Worker example).\n// Settings to add in Cloudflare (Workers > your worker > Settings > Variables):\n//   TEAM_ID         your 10-character Apple Team ID\n//   KEY_ID          the Key ID of your MusicKit key\n//   PRIVATE_KEY     the full text of the .p8 file (add it as a Secret)\n//   ALLOWED_ORIGIN  the address of the page that uses this, e.g. https://yourname.github.io\nexport default {\n  async fetch(request, env) {\n    const origin = request.headers.get(\"Origin\");\n    const cors = { \"Access-Control-Allow-Origin\": env.ALLOWED_ORIGIN, \"Vary\": \"Origin\" };\n    if (request.method === \"OPTIONS\") {\n      return new Response(null, { headers: Object.assign({ \"Access-Control-Allow-Methods\": \"GET\", \"Access-Control-Max-Age\": \"86400\" }, cors) });\n    }\n    if (request.method !== \"GET\" || origin !== env.ALLOWED_ORIGIN) {\n      return new Response(\"Not allowed\", { status: 403 });\n    }\n    const enc = new TextEncoder();\n    const b64u = function (bytes) {\n      let s = \"\";\n      for (const b of bytes) s += String.fromCharCode(b);\n      return btoa(s).replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");\n    };\n    const now = Math.floor(Date.now() / 1000);\n    const head = b64u(enc.encode(JSON.stringify({ alg: \"ES256\", kid: env.KEY_ID, typ: \"JWT\" })));\n    const body = b64u(enc.encode(JSON.stringify({ iss: env.TEAM_ID, iat: now, exp: now + 12 * 3600 })));\n    const pem = env.PRIVATE_KEY.replace(/-----[A-Z ]+-----/g, \"\").replace(/\\s+/g, \"\");\n    const der = Uint8Array.from(atob(pem), function (c) { return c.charCodeAt(0); });\n    const key = await crypto.subtle.importKey(\"pkcs8\", der, { name: \"ECDSA\", namedCurve: \"P-256\" }, false, [\"sign\"]);\n    const sig = await crypto.subtle.sign({ name: \"ECDSA\", hash: \"SHA-256\" }, key, enc.encode(head + \".\" + body));\n    const token = head + \".\" + body + \".\" + b64u(new Uint8Array(sig));\n    return new Response(JSON.stringify({ token: token }), { headers: Object.assign({ \"Content-Type\": \"application/json\" }, cors) });\n  }\n};\n";
+const WORKER="// Apple Music developer-token service (Cloudflare Worker example).\n// Settings to add in Cloudflare (Workers > your worker > Settings > Variables):\n//   TEAM_ID         your 10-character Apple Team ID\n//   KEY_ID          the Key ID of your MusicKit key\n//   PRIVATE_KEY     the full text of the .p8 file (add it as a Secret)\n//   ALLOWED_ORIGIN  the address of the page that uses this, e.g. https://yourname.github.io\nexport default {\n  async fetch(request, env) {\n    const origin = request.headers.get(\"Origin\");\n    const cors = { \"Access-Control-Allow-Origin\": env.ALLOWED_ORIGIN, \"Vary\": \"Origin\" };\n    if (request.method === \"OPTIONS\") {\n      return new Response(null, { headers: Object.assign({ \"Access-Control-Allow-Methods\": \"GET\", \"Access-Control-Max-Age\": \"86400\" }, cors) });\n    }\n    if (request.method !== \"GET\" || origin !== env.ALLOWED_ORIGIN) {\n      return new Response(\"Not allowed\", { status: 403 });\n    }\n    const enc = new TextEncoder();\n    const b64u = function (bytes) {\n      let s = \"\";\n      for (const b of bytes) s += String.fromCharCode(b);\n      return btoa(s).replace(/\\+/g, \"-\").replace(/\\//g, \"_\").replace(/=+$/, \"\");\n    };\n    const now = Math.floor(Date.now() / 1000);\n    const head = b64u(enc.encode(JSON.stringify({ alg: \"ES256\", kid: env.KEY_ID, typ: \"JWT\" })));\n    const body = b64u(enc.encode(JSON.stringify({ iss: env.TEAM_ID, iat: now, exp: now + 12 * 3600, origin: [env.ALLOWED_ORIGIN] })));\n    const pem = env.PRIVATE_KEY.replace(/-----[A-Z ]+-----/g, \"\").replace(/\\s+/g, \"\");\n    const der = Uint8Array.from(atob(pem), function (c) { return c.charCodeAt(0); });\n    const key = await crypto.subtle.importKey(\"pkcs8\", der, { name: \"ECDSA\", namedCurve: \"P-256\" }, false, [\"sign\"]);\n    const sig = await crypto.subtle.sign({ name: \"ECDSA\", hash: \"SHA-256\" }, key, enc.encode(head + \".\" + body));\n    const token = head + \".\" + body + \".\" + b64u(new Uint8Array(sig));\n    return new Response(JSON.stringify({ token: token }), { headers: Object.assign({ \"Content-Type\": \"application/json\" }, cors) });\n  }\n};\n";
 function apGuide(role){const e=PLX.env(),c=PLX.cfg(),tokOk=TOK_OK(c.appleTokenUrl||"");
  return`<p class="hint">Apple is more involved than Spotify: it needs a paid Apple Developer Program membership (about US$99/year) and a tiny \u201ctoken service\u201d that signs a pass for Apple. The signing key must never be put in this page. <b>If that\u2019s too much, skip it \u2014 it\u2019s the easy route:</b> in the Music app on a computer choose File \u2192 Library \u2192 Export Playlist, then import that file here.</p><ol class="plx-gl" aria-label="Apple Music setup steps">`+addrStep("Apple Music")+
  stp(null,"2. Create a MusicKit key at Apple",`<p>Sign in at <a href="https://developer.apple.com/account" target="_blank" rel="noopener noreferrer">developer.apple.com/account</a> \u2192 <b>Certificates, Identifiers &amp; Profiles</b> \u2192 <b>Keys</b> \u2192 <b>+</b>. Tick <b>Media Services (MusicKit)</b> and register it (if Apple asks for a Media ID, create one). <b>Download the .p8 file \u2014 Apple only lets you do this once.</b> Write down the <b>Key ID</b> and your 10-character <b>Team ID</b> (shown under Membership details).</p>`)+
@@ -1558,8 +1834,17 @@ function apGuide(role){const e=PLX.env(),c=PLX.cfg(),tokOk=TOK_OK(c.appleTokenUr
  stp(tokOk?true:(c.appleTokenUrl?false:null),"4. Paste your token service address",`<p>Copy the Worker\u2019s address (it ends in <code>.workers.dev</code>) and paste it here, then test it.</p><div class="row"><div><label for="plxtok">Token service address</label><input type="text" id="plxtok" value="${esc(c.appleTokenUrl)}" autocomplete="off" spellcheck="false" inputmode="url" placeholder="https://\u2026.workers.dev"></div><div style="flex:0 0 auto"><button class="sm" onclick="plxSaveCfg()">Save</button> <button class="sm sec" ${tokOk?"":"disabled"} onclick="plxTestTok()">Test it</button></div></div>${tokOk?`<p class="ok" style="margin:4px 0 0">Saved. Press \u201cTest it\u201d to check it really returns a token.</p>`:""}`)+
  stp(null,"5. Connect",`<p>${tokOk&&e.secure?"You\u2019ll be asked to sign in with your Apple ID and allow access to your music library.":"Finish the steps marked above first."}</p><div class="acts"><button ${tokOk&&e.secure?"":"disabled"} onclick="plxConnect('apple','${role}')">Connect Apple Music</button></div>`)+
  `</ol><details><summary>Something went wrong?</summary><ul class="plx-fix"><li><b>\u201cTest it\u201d can\u2019t reach the service</b> \u2014 check for typos; and make sure <code>ALLOWED_ORIGIN</code> is exactly the value in step 3 (no slash at the end).</li><li><b>Apple shows a 401 or \u201cunauthorized\u201d</b> \u2014 the Team ID, Key ID or key text in the Worker is wrong, or the key wasn\u2019t made for MusicKit.</li><li><b>No playlists appear</b> \u2014 you need an Apple Music subscription on the account you sign in with.</li></ul></details>`}
-function settings(role){role=role||"src";const sp=S.guide==="spotify",ap=S.guide==="apple";
- return`<div class="plx-gs"><h3>First time connecting a service?</h3><p class="hint" style="margin:0">Spotify and Apple Music each need a one-time setup, because this app has no server of its own. You never type a music-account password here, and nothing is sent anywhere except to the service you choose.</p><div class="acts" role="group" aria-label="Setup guides"><button class="sm ${sp?"":"sec"}" aria-expanded="${sp}" onclick="plxGuide('spotify')">Spotify setup guide</button><button class="sm ${ap?"":"sec"}" aria-expanded="${ap}" onclick="plxGuide('apple')">Apple Music setup guide</button></div>${sp?spGuide(role):""}${ap?apGuide(role):""}</div>`}
+function ytGuide(role){const e=PLX.env(),c=PLX.cfg(),idOk=YT_ID.test(c.youtubeClientId||""),addrOk=ytOk(),conn=PLX.get("youtube").isConnected();
+ const addr=addrOk?stp(true,"1. This page is on an allowed address",`<p>Good \u2014 Google sign-in can work from here (${esc(pageOrigin()||"this address")}).</p>`):stp(false,"1. Open this page from a web address, not as a file",`<p>You opened this as a file on your computer. Google can\u2019t sign you in on a file, so YouTube can\u2019t connect this way. <b>Everything else in the app still works.</b> To test on your own computer, open a terminal in the folder holding this file, run the line below, then open <code>http://127.0.0.1:8000</code> (or <code>http://localhost:8000</code>).</p>${cp("plx-yc1","python3 -m http.server 8000")}<p class="hint" style="margin:0">Or put the file on any https web host.</p>`);
+ return`<p class="hint">This is YouTube <b>video playlists</b> only, not YouTube Music. It needs a free Google Client ID you create once (about 10 minutes). Google gives a new app a small daily quota: searches are capped at about 100 a day by default, and adding a song costs 50 of the 10,000 daily units. In practice that means roughly 100 songs a day. Google changes these numbers, so check your own quota in the Google Cloud console. If that\u2019s too limiting, export your playlist from Google Takeout and import that file instead.</p><ol class="plx-gl" aria-label="YouTube setup steps">`+addr+
+ stp(null,"2. Create a Google Cloud project and turn on the YouTube Data API",`<p>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">console.cloud.google.com</a>, create a project, then open <b>APIs &amp; Services \u2192 Library</b>, search for <b>YouTube Data API v3</b> and press <b>Enable</b>. (Google renames menus now and then; the names above may differ slightly.)</p>`)+
+ stp(null,"3. Set up the consent screen",`<p>Open <b>OAuth consent screen</b> (now called <b>Google Auth Platform</b>). Choose <b>External</b>, give the app any name and your email, and under <b>Test users</b> add the Google account you will sign in with. While the app is in Testing, only listed test users can sign in.</p>`)+
+ stp(null,"4. Create the Client ID",`<p><b>Credentials \u2192 Create credentials \u2192 OAuth client ID</b>, application type <b>Web application</b>. Under <b>Authorized JavaScript origins</b> add exactly this value (no slash at the end). You do not need a redirect URI.</p>${addrOk?cp("plx-yo",pageOrigin()):`<p class="hint">Finish step 1 first \u2014 this value is the address you open this page from.</p>`}<p>Copy the <b>Client ID</b> (ends in <code>.apps.googleusercontent.com</code>). Do not use the Client secret.</p>`)+
+ stp(idOk?true:(c.youtubeClientId?false:null),"5. Paste your Client ID",`<div class="row"><div><label for="plxytid">Google Client ID</label><input type="text" id="plxytid" value="${esc(c.youtubeClientId||"")}" autocomplete="off" spellcheck="false" placeholder="123456789-abc123.apps.googleusercontent.com"></div><div style="flex:0 0 auto"><button class="sm" onclick="plxSaveCfg()">Save</button></div></div>${idOk?`<p class="ok" style="margin:4px 0 0">Saved.</p>`:""}`)+
+ stp(conn?true:null,"6. Connect",conn?`<p class="ok">Connected. Press \u201cUse as source\u201d on the YouTube card above.</p>`:`<p>${idOk&&addrOk?"A Google sign-in window will open. If the first press only loads Google\u2019s script, press the button again.":"Finish the steps marked above first."}</p><div class="acts"><button ${idOk&&addrOk?"":"disabled"} onclick="plxConnect('youtube','${role}')">Connect YouTube</button></div>`)+
+ `</ol><details><summary>Something went wrong?</summary><ul class="plx-fix"><li><b>\u201cError 400: origin_mismatch\u201d</b> \u2014 the Authorized JavaScript origin in step 4 must match the address bar exactly, including http/https and the port.</li><li><b>\u201cAccess blocked\u201d or \u201cnot verified\u201d</b> \u2014 add your Google account as a Test user in step 3.</li><li><b>Sign-in window doesn\u2019t open</b> \u2014 allow pop-ups for this page.</li><li><b>\u201cQuota\u201d message</b> \u2014 the daily limit is used up. It resets at midnight Pacific time; the paused transfer can be resumed then.</li><li><b>Signed out after about an hour</b> \u2014 normal for Google sign-ins in a browser; press Grant permission to sign in again.</li></ul></details>`}
+function settings(role){role=role||"src";const sp=S.guide==="spotify",ap=S.guide==="apple",yt=S.guide==="youtube";
+ return`<div class="plx-gs"><h3>First time connecting a service?</h3><p class="hint" style="margin:0">Spotify, Apple Music and YouTube each need a one-time setup, because this app has no server of its own. You never type a music-account password here, and nothing is sent anywhere except to the service you choose.</p><div class="acts" role="group" aria-label="Setup guides"><button class="sm ${sp?"":"sec"}" aria-expanded="${sp}" onclick="plxGuide('spotify')">Spotify setup guide</button><button class="sm ${ap?"":"sec"}" aria-expanded="${ap}" onclick="plxGuide('apple')">Apple Music setup guide</button><button class="sm ${yt?"":"sec"}" aria-expanded="${yt}" onclick="plxGuide('youtube')">YouTube setup guide</button></div>${sp?spGuide(role):""}${ap?apGuide(role):""}${yt?ytGuide(role):""}</div>`}
 const hintFor=m=>{m=String(m||"");const h=[];
  if(/invalid[_ ]client|redirect/i.test(m))h.push("Usually the redirect address in your Spotify app doesn\u2019t match exactly, or the Client ID is wrong. Compare with steps 1 and 2 of the Spotify guide.");
  if(/access_denied|\b403\b|not registered/i.test(m)&&/spotify/i.test(m))h.push("This often means your account isn\u2019t in the app\u2019s User management list (step 1), the app owner doesn\u2019t have Premium, or you pressed Cancel.");
@@ -1578,7 +1863,7 @@ function v3(){const dsts=adapters().filter(a=>PLX.canWrite(a));let b=head()+`<p 
  b+=`<div class="row" style="margin-top:8px"><div><label for="plxmodesel">Where should the tracks go?</label><select id="plxmodesel" onchange="plxMode(this.value)"><option value="new"${S.dstMode==="new"?" selected":""}>A new playlist</option><option value="existing"${S.dstMode==="existing"?" selected":""}>Add to an existing playlist</option></select></div></div>`;
  if(S.dstMode==="existing"){b+=S.dstPls?`<div class="tl" role="radiogroup" aria-label="Destination playlist">${S.dstPls.map((p,i)=>`<label class="tr" style="color:var(--tx);font-size:14px;margin:0;${p.readable===false?"opacity:.55":""}"><input type="radio" name="plxdsel" ${S.dstSel===i?"checked":""} ${p.readable===false?"disabled":""} onchange="plxDstSel(${i})"><span class="m"><b>${esc(p.name)}</b><span>${p.total==null?"":p.total+" tracks"}${p.readable===false?" \u00b7 not yours to edit":""}</span></span></label>`).join("")}</div>`:(S.busy?`<p class="hint" role="status">Loading\u2026</p>`:`<p class="plx-err" role="alert">${esc(S.dstLoadErr||"Your playlists haven\u2019t loaded yet.")}</p><div class="acts"><button class="sec" onclick="plxReloadDst()">Try again</button></div>`)}
  if(A.caps.publicPrivate&&S.dstMode==="new")b+=`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);margin-top:8px"><input type="checkbox" ${S.pub?"checked":""} onchange="plxField('pub',this.checked)"> Make the new playlist public (private is the default)</label>`;
- b+=`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);margin-top:8px"><input type="checkbox" ${S.dedupe?"checked":""} onchange="plxField('dedupe',this.checked)"> Remove repeated tracks (otherwise repeats in the source are kept)</label>`;
+ b+=`<label style="display:flex;gap:8px;align-items:center;color:var(--tx);margin-top:8px"><input type="checkbox" ${S.dedupe?"checked":""} onchange="plxField('dedupe',this.checked)"> Remove repeated tracks (otherwise repeats in the source are kept). Different versions, such as live, remix or remaster, are never treated as repeats.</label>`;
  return b+`<div class="acts" style="margin-top:12px"><button class="sec" onclick="plxStep(2)">Back</button><button onclick="plxMatch()" ${S.busy?"disabled":""}>Find matches</button></div>`}
 function filt(it){const c=PLX.cat(it);switch(S.filter){case"all":return true;case"todo":return c==="undecided"||c==="unmatched";case"missing":return c==="missing"||c==="unsupported";case"accepted":return c==="add";case"skipped":return c==="skip"||c==="dup";case"dups":return false;default:return true}}
 function v4(){const j=S.job;if(!j)return head();const P=PLX.plan(j),n=j.items.length,done=j.items.filter(i=>i.m).length;
@@ -1637,11 +1922,12 @@ const saveUi=()=>{try{root.sessionStorage.setItem("plx:ui",JSON.stringify({step:
 root.plxStep=n=>{S.err="";S.msg="";S.step=n;S.page=0;if(n===3&&S.sel!=null&&!S.name&&S.pls)S.name=S.pls[S.sel].name+(S.srcId==="local"?"":" (copy)");draw();
  if(n===2&&S.srcId&&!S.pls&&isConn(S.srcId))guard("Loading playlists\u2026",loadSrc);
  if(n===3&&S.dstMode==="existing"&&S.dstId&&!S.dstPls&&isConn(S.dstId))guard("Loading playlists\u2026",loadDst)};
-root.plxSaveCfg=()=>{const o={},cid=$("plxcid"),tok=$("plxtok");S.msg="";S.err="";
+root.plxSaveCfg=()=>{const o={},cid=$("plxcid"),tok=$("plxtok"),ytid=$("plxytid");S.msg="";S.err="";
+ if(ytid){const v=ytid.value.trim();if(v&&!YT_ID.test(v)){S.err="That doesn\u2019t look like a Google Client ID. It looks like 123456789-abc123.apps.googleusercontent.com. Copy the Client ID \u2014 not the Client secret.";return draw()}o.youtubeClientId=v}
  if(cid){const v=cid.value.trim();if(v&&!SP_ID.test(v)){S.err="That doesn\u2019t look like a Spotify Client ID. It should be exactly 32 letters and numbers, with no spaces. Copy the Client ID \u2014 not the Client secret or the app name.";return draw()}o.spotifyClientId=v}
  if(tok){const v=tok.value.trim();if(v&&!TOK_OK(v)){S.err="The token service address must start with https:// (or http://127.0.0.1 when testing on your own computer).";return draw()}o.appleTokenUrl=v}
  const ok=PLX.setCfg(o);if(ok)S.msg="Saved.";else S.err="Could not save in this browser (storage may be full or blocked).";draw()};
-root.plxConnect=(id,role)=>{if((id==="spotify"||id==="apple")&&!ready(id)){S.guide=id;S.err="";S.msg="Let\u2019s get "+(PLX.get(id)||{}).name+" set up first \u2014 follow the steps below. You only do this once.";draw();const g=D.querySelector(".plx-gs");if(g&&g.scrollIntoView)g.scrollIntoView({block:"start"});return}return plxConnect2(id,role)};
+root.plxConnect=(id,role)=>{if((id==="spotify"||id==="apple"||id==="youtube")&&!ready(id)){S.guide=id;S.err="";S.msg="Let\u2019s get "+(PLX.get(id)||{}).name+" set up first \u2014 follow the steps below. You only do this once.";draw();const g=D.querySelector(".plx-gs");if(g&&g.scrollIntoView)g.scrollIntoView({block:"start"});return}return plxConnect2(id,role)};
 root.plxGuide=id=>{S.guide=S.guide===id?null:id;S.msg="";S.err="";draw()};
 root.plxCopy=async id=>{const el=$(id);if(!el)return;const t=el.textContent;let ok=false;try{await root.navigator.clipboard.writeText(t);ok=true}catch(e){}
  S.err="";S.msg=ok?"Copied.":"Couldn\u2019t copy automatically \u2014 the text is selected, press Ctrl+C (Cmd+C on a Mac).";draw();if(!ok){try{const el2=$(id),r=D.createRange();r.selectNodeContents(el2);const sl=root.getSelection();sl.removeAllRanges();sl.addRange(r)}catch(e){}}};
@@ -2021,6 +2307,228 @@ look();loadBg().then(schTick);
 </script>
 
 <script>
+/*PLX sync — one-way, user-started playlist sync on top of the transfer engine.
+  Honest scope: it compares the source playlist with a saved snapshot, reads the destination where the provider allows it,
+  and sends NEW tracks through the normal match-and-review wizard. It never deletes anything at the destination and never
+  runs by itself (a web page cannot run in the background, and none of these services offers change notifications). */
+(function(root){
+"use strict";
+const PLX=root.PLX,D=root.document,SKEY="plremix:sync";
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const nrm=(f,v)=>{try{return f(v)||""}catch(e){return""}};
+const keyOf=t=>{const a=nrm(normA,t&&t.a)||String(t&&t.a||"").toLowerCase(),n=nrm(norm,t&&t.t)||String(t&&t.t||"").toLowerCase();return a+"|"+n+"|"+(t&&t.ver||"")};
+const count=a=>{const m=new Map();a.forEach(k=>m.set(k,(m.get(k)||0)+1));return m};
+/* ---------- pure logic (also used by the tests) ---------- */
+function diffSource(snapKeys,nowTracks){
+ const nowKeys=nowTracks.map(keyOf),sc=count(snapKeys),nc=count(nowKeys),seenN=new Map(),seenS=new Map(),added=[],removed=[];
+ nowTracks.forEach((t,i)=>{const k=nowKeys[i],n=(seenN.get(k)||0)+1;seenN.set(k,n);if(n>(sc.get(k)||0))added.push(t)});
+ snapKeys.forEach(k=>{const n=(seenS.get(k)||0)+1;seenS.set(k,n);if(n>(nc.get(k)||0))removed.push(k)});
+ const reordered=!added.length&&!removed.length&&snapKeys.join("\u0001")!==nowKeys.join("\u0001");
+ return{added,removed,reordered,nowKeys}}
+function diffDest(snapIds,nowIds){
+ const sc=count(snapIds),nc=count(nowIds),a=new Map(),b=new Map(),added=[],removed=[];
+ nowIds.forEach(id=>{const n=(a.get(id)||0)+1;a.set(id,n);if(n>(sc.get(id)||0))added.push(id)});
+ snapIds.forEach(id=>{const n=(b.get(id)||0)+1;b.set(id,n);if(n>(nc.get(id)||0))removed.push(id)});
+ return{added,removed}}
+/* conflicts: a track the person removed at the destination that the source still has */
+function findConflicts(link,sd,dd,nowTracks){
+ const rev=new Map();Object.entries(link.map||{}).forEach(([k,ids])=>(ids||[]).forEach(id=>rev.set(String(id),k)));
+ const nowByKey=new Map();nowTracks.forEach(t=>{const k=keyOf(t);if(!nowByKey.has(k))nowByKey.set(k,t)});
+ const out=[],seen=new Set();
+ (dd?dd.removed:[]).forEach(id=>{const k=rev.get(String(id));if(k&&nowByKey.has(k)&&!seen.has(k)){seen.add(k);out.push({key:k,track:nowByKey.get(k)})}});
+ return out}
+/* what to send to the wizard, given the policy (and, for "ask", the conflicts the person ticked) */
+function resolve(policy,added,conflicts,picked){
+ const re=policy==="source"?conflicts:policy==="ask"?conflicts.filter(c=>picked&&picked.has(c.key)):[];
+ return{tracks:added.concat(re.map(c=>c.track)),reAdded:re.length,leftAlone:conflicts.length-re.length}}
+PLX.sync={keyOf,diffSource,diffDest,findConflicts,resolve};
+/* ---------- storage ---------- */
+function load(){try{const d=JSON.parse(root.localStorage.getItem(SKEY)||"null");return d&&Array.isArray(d.links)?d:{v:1,links:[]}}catch(e){try{root.localStorage.setItem(SKEY+":corrupt",root.localStorage.getItem(SKEY))}catch(x){}return{v:1,links:[]}}}
+function save(d){try{const v=JSON.stringify(d);root.localStorage.setItem(SKEY,v);return root.localStorage.getItem(SKEY)===v}catch(e){return false}}
+const jobs=()=>PLX.makeStore(PLX.ls());
+const R={};let note="";
+const fmt=t=>t?new Date(t).toLocaleString():"never";
+const hist=(L,kind,msg)=>{L.history=(L.history||[]);L.history.unshift({at:Date.now(),kind,msg});L.history.length=Math.min(L.history.length,40)};
+const conn=id=>{const A=PLX.get(id);try{return!!(A&&A.isConnected&&A.isConnected())}catch(e){return false}};
+const pname=id=>{const A=PLX.get(id);return A?A.name:id};
+/* ---------- actions ---------- */
+function linkFromJob(jobId){
+ const j=jobs().get(jobId);if(!j||!j.dst.playlistId){note="That transfer has no destination playlist to link.";return}
+ const d=load();if(d.links.some(l=>l.dst.provider===j.dst.provider&&l.dst.playlistId===j.dst.playlistId&&l.src.playlistId===j.src.playlistId&&l.src.provider===j.src.provider)){note="That playlist pair is already linked.";return}
+ const map={};j.items.forEach(it=>{if(it.act==="add"&&it.xs==="done"&&it.choice){const k=keyOf(it.t);(map[k]=map[k]||[]).push(String(it.choice))}});
+ const L={id:uid(),name:j.dst.name||j.src.name,created:Date.now(),direction:"one-way",policy:"ask",paused:false,lastSync:j.finished||null,
+  src:{provider:j.src.provider,accountId:j.src.account||null,playlistId:j.src.playlistId,name:j.src.name},
+  dst:{provider:j.dst.provider,accountId:j.dst.account||null,playlistId:j.dst.playlistId,name:j.dst.name,url:j.dst.url||null},
+  srcSnap:j.items.map(it=>keyOf(it.t)),dstSnap:null,map,history:[],pending:null};
+ hist(L,"link","Linked from a "+(j.state||"")+" transfer. Baseline: the tracks in that transfer.");
+ d.links.unshift(L);note=save(d)?"Linked. Press “Check for changes” whenever you want to compare.":"This browser could not save the link (storage full or blocked)."}
+async function readAll(A,cap,id){return cap==="readDestination"?PLX.retry(()=>PLX.call(A,cap,id)):PLX.drain(p=>PLX.call(A,cap,id,p))}
+async function commitPending(L){
+ const p=L.pending;if(!p)return true;const j=jobs().get(p.jobId);
+ if(!j){hist(L,"warn","The earlier sync transfer record is gone, so nothing was recorded as applied.");L.pending=null;return true}
+ if(j.state!=="completed"){R[L.id].blocked={jobId:j.id,state:j.state,err:j.err};return false}
+ j.items.forEach(it=>{if(it.act==="add"&&it.xs==="done"&&it.choice){const k=keyOf(it.t);(L.map[k]=L.map[k]||[]).push(String(it.choice))}});
+ L.srcSnap=p.srcKeys;L.lastSync=j.finished||Date.now();
+ const A=PLX.get(L.dst.provider);
+ if(A&&A.caps.readDestination&&conn(A.id)){try{L.dstSnap=(await PLX.retry(()=>PLX.call(A,"readDestination",L.dst.playlistId))).map(String)}catch(e){}}
+ const n=j.items.filter(it=>it.act==="add"&&it.xs==="done").length;
+ hist(L,"sync","Applied: "+n+" track"+(n===1?"":"s")+" added to the destination.");L.pending=null;return true}
+async function check(id){
+ const d=load(),L=d.links.find(l=>l.id===id);if(!L)return;const st=R[id]={busy:"Checking…"};redraw();
+ try{
+  const sA=PLX.get(L.src.provider),dA=PLX.get(L.dst.provider);
+  if(!sA||!PLX.canRead(sA))throw new Error((sA?sA.name:L.src.provider)+" cannot be read right now.");
+  if(!conn(sA.id))throw new Error("Connect "+sA.name+" first (Transfer Music → Source), then check again.");
+  if(!dA||!PLX.canWrite(dA))throw new Error((dA?dA.name:L.dst.provider)+" cannot be written to by this app.");
+  if(!conn(dA.id))throw new Error("Connect "+dA.name+" first (Transfer Music → Destination), then check again.");
+  if(!await commitPending(L)){save(d);R[id]=Object.assign(R[id],{busy:""});redraw();return}
+  st.busy="Reading "+sA.name+"…";redraw();
+  const now=await readAll(sA,"readItems",L.src.playlistId),sd=diffSource(L.srcSnap,now);
+  let dd=null,dstNow=null,dnote="";
+  if(dA.caps.readDestination){st.busy="Reading "+dA.name+"…";redraw();dstNow=(await readAll(dA,"readDestination",L.dst.playlistId)).map(String);
+   if(L.dstSnap==null){L.dstSnap=dstNow;dnote="Destination baseline recorded now; edits made at the destination are tracked from this check on."}else dd=diffDest(L.dstSnap,dstNow)}
+  else dnote=dA.name+" does not let this app read the playlist back, so destination edits cannot be detected.";
+  const conflicts=findConflicts(L,sd,dd,now);
+  L.lastChecked=Date.now();hist(L,"check","Checked: "+sd.added.length+" new, "+sd.removed.length+" removed"+(sd.reordered?", order changed":"")+(conflicts.length?", "+conflicts.length+" conflict"+(conflicts.length===1?"":"s"):"")+".");
+  R[id]={busy:"",res:{sd,dd,conflicts,now,dnote,picked:new Set(),at:Date.now()}};save(d)
+ }catch(e){R[id]={busy:"",err:String(e&&e.message||e)};save(d)}
+ redraw()}
+async function apply(id){
+ const d=load(),L=d.links.find(l=>l.id===id),st=R[id];if(!L||!st||!st.res)return;const r=st.res;
+ const plan=resolve(L.policy,r.sd.added,r.conflicts,r.picked);
+ if(!plan.tracks.length){note="Nothing to add.";return redraw()}
+ try{
+  const sA=PLX.get(L.src.provider),dA=PLX.get(L.dst.provider);st.busy="Preparing "+plan.tracks.length+" track"+(plan.tracks.length===1?"":"s")+"…";redraw();
+  const job=PLX.newJob({src:sA,dst:dA,playlist:{id:L.src.playlistId,name:L.src.name},spec:{name:L.dst.name,playlistId:L.dst.playlistId,visibilityVerified:false},tracks:plan.tracks,dedupe:false});
+  const store=jobs();if(!store.put(job))throw new Error("This browser could not save the transfer job, so it was not started.");
+  L.pending={jobId:job.id,srcKeys:r.sd.nowKeys,at:Date.now()};hist(L,"stage","Staged "+plan.tracks.length+" track"+(plan.tracks.length===1?"":"s")+" for review ("+plan.reAdded+" re-added by policy).");save(d);
+  st.busy="Matching in "+dA.name+"…";redraw();
+  try{await PLX.matchJob(job,dA,{store})}catch(e){note="Matching stopped: "+(e&&e.message||e)+" You can finish it from the transfer screen."}
+  R[id]={busy:""};redraw();
+  const go=D.querySelector('#sn [data-go="transfer"]');if(go)go.click();if(root.plxOpen)root.plxOpen(job.id)
+ }catch(e){R[id]=Object.assign(R[id]||{},{busy:"",err:String(e&&e.message||e)});redraw()}}
+function skipChanges(id){const d=load(),L=d.links.find(l=>l.id===id),st=R[id];if(!L||!st||!st.res)return;
+ L.srcSnap=st.res.sd.nowKeys;if(st.res.dd&&L.dstSnap)L.dstSnap=L.dstSnap.filter(x=>!st.res.dd.removed.includes(x)).concat(st.res.dd.added);
+ L.lastSync=Date.now();hist(L,"skip","Accepted the current source as the new baseline without adding tracks.");save(d);R[id]={busy:""};note="Baseline updated. Nothing was written anywhere.";redraw()}
+function edit(id,fn){const d=load(),L=d.links.find(l=>l.id===id);if(!L)return;fn(L,d);save(d);redraw()}
+/* ---------- view ---------- */
+const POL={ask:"Ask me",source:"Source wins",dest:"Destination wins",both:"Keep both"};
+const POLX={ask:"Each check lists tracks you removed at the destination that are still in the source, and you tick the ones to add back.",source:"Tracks you removed at the destination are added back if they are still in the source.",dest:"Tracks you removed at the destination stay removed.",both:"Nothing is added back and nothing is removed; new source tracks are added."};
+function resHtml(L,st){const r=st.res;if(!r)return"";const ch=r.sd.added.length+r.sd.removed.length+(r.sd.reordered?1:0)+(r.dd?r.dd.added.length+r.dd.removed.length:0);
+ let h=`<div class="warn" role="status"><b>Result of the check (${esc(fmt(r.at))})</b>`;
+ h+=`<ul><li>New in the source: <b>${r.sd.added.length}</b></li><li>Removed from the source: <b>${r.sd.removed.length}</b>${r.sd.removed.length?" — these stay at the destination. This app never deletes tracks there.":""}</li><li>Order changed: <b>${r.sd.reordered?"yes":"no"}</b>${r.sd.reordered?" — reordering the destination is not supported, so it is only reported.":""}</li>`;
+ h+=r.dd?`<li>Added at the destination by hand: <b>${r.dd.added.length}</b> (kept)</li><li>Removed at the destination by hand: <b>${r.dd.removed.length}</b></li>`:"";
+ h+=`</ul>${r.dnote?`<p class="hint">${esc(r.dnote)}</p>`:""}<p class="hint">Edited metadata (a renamed title, say) is not detected: a changed title looks like one removed and one new track.</p>`;
+ if(r.sd.added.length)h+=`<details><summary>New tracks (${r.sd.added.length})</summary><ol>${r.sd.added.slice(0,50).map(t=>`<li>${esc(t.a)} — ${esc(t.t)}</li>`).join("")}${r.sd.added.length>50?`<li>…and ${r.sd.added.length-50} more</li>`:""}</ol></details>`;
+ if(r.conflicts.length){h+=`<p><b>Conflicts (${r.conflicts.length}):</b> removed at the destination but still in the source. Policy: <b>${esc(POL[L.policy])}</b>. ${esc(POLX[L.policy])}</p>`;
+  if(L.policy==="ask")h+=r.conflicts.map((c,i)=>`<label style="display:flex;gap:8px;align-items:center;color:var(--tx)"><input type="checkbox" data-sa="pick" data-id="${esc(L.id)}" data-k="${i}" ${r.picked.has(c.key)?"checked":""}> Add back: ${esc(c.track.a)} — ${esc(c.track.t)}</label>`).join("")}
+ const plan=resolve(L.policy,r.sd.added,r.conflicts,r.picked);
+ h+=`<div class="acts" style="margin-top:8px"><button type="button" data-sa="apply" data-id="${esc(L.id)}" ${plan.tracks.length&&!st.busy?"":"disabled"}>Match and review ${plan.tracks.length} track${plan.tracks.length===1?"":"s"}</button>`+
+  `<button type="button" class="sec" data-sa="skip" data-id="${esc(L.id)}" ${ch&&!st.busy?"":"disabled"}>Ignore these changes</button></div><p class="hint">Nothing is written until you review the matches and confirm in Transfer Music.</p></div>`;
+ return h}
+function linkHtml(L){const st=R[L.id]||{},blocked=st.blocked;
+ let h=`<div class="card" style="margin:0 0 12px;padding:12px"><h3 style="margin:0 0 4px;font-size:16px">${esc(L.name)} ${L.paused?'<span class="pill">Paused</span>':'<span class="pill on">Active</span>'}</h3>
+ <p class="hint" style="margin:0 0 6px">${esc(L.src.name)} <small>(${esc(pname(L.src.provider))})</small> → ${L.dst.url?`<a href="${esc(L.dst.url)}" target="_blank" rel="noopener noreferrer">${esc(L.dst.name)}</a>`:esc(L.dst.name)} <small>(${esc(pname(L.dst.provider))})</small></p>
+ <p class="hint" style="margin:0 0 6px">One-way · last synced: ${esc(fmt(L.lastSync))} · last checked: ${esc(fmt(L.lastChecked))} · ${L.srcSnap.length} tracks in the saved source snapshot${L.dstSnap?` · ${L.dstSnap.length} in the destination snapshot`:""}</p>
+ <div class="row" style="align-items:end"><div><label for="pol-${esc(L.id)}">When the destination was edited by hand</label><select id="pol-${esc(L.id)}" data-sa="policy" data-id="${esc(L.id)}">${Object.entries(POL).map(([k,v])=>`<option value="${k}"${L.policy===k?" selected":""}>${v}</option>`).join("")}</select></div>
+ <div style="flex:0 0 auto" class="acts"><button type="button" data-sa="check" data-id="${esc(L.id)}" ${L.paused||st.busy?"disabled":""}>Check for changes</button><button type="button" class="sec" data-sa="${L.paused?"resume":"pause"}" data-id="${esc(L.id)}">${L.paused?"Resume":"Pause"}</button><button type="button" class="sec" data-sa="unlink" data-id="${esc(L.id)}">Disconnect</button></div></div>
+ <p class="hint" style="margin:6px 0 0">${esc(POLX[L.policy])}</p>`;
+ if(st.busy)h+=`<p role="status">${esc(st.busy)}</p>`;
+ if(st.err)h+=`<p class="plx-err" role="alert">${esc(st.err)}</p>`;
+ if(blocked)h+=`<p class="plx-err" role="alert">The last sync transfer is not finished (${esc(blocked.state)}${blocked.err?": "+esc(blocked.err):""}). Finish or cancel it first.</p><div class="acts"><button type="button" class="sec" data-sa="open" data-id="${esc(blocked.jobId)}">Open that transfer</button><button type="button" class="sec" data-sa="discard" data-id="${esc(L.id)}">Discard it</button></div>`;
+ h+=resHtml(L,st);
+ if((L.history||[]).length)h+=`<details><summary>Sync history (${L.history.length})</summary><ul>${L.history.map(x=>`<li>${esc(fmt(x.at))} — ${esc(x.msg)}</li>`).join("")}</ul></details>`;
+ return h+"</div>"}
+function redraw(){const el=D.getElementById("syncb");if(!el)return;const d=load(),linked=new Set(d.links.map(l=>l.src.provider+"|"+l.src.playlistId+"|"+l.dst.provider+"|"+l.dst.playlistId));
+ let cand=[];try{cand=jobs().list().filter(j=>j.dst&&j.dst.playlistId&&/completed|partial/.test(j.state)&&!linked.has(j.src.provider+"|"+j.src.playlistId+"|"+j.dst.provider+"|"+j.dst.playlistId))}catch(e){}
+ const active=D.activeElement&&D.activeElement.id;
+ el.innerHTML=`<p class="hint" style="margin-top:0">Keep a destination playlist up to date with its source. <b>It runs only when you press “Check for changes”</b>: a web page cannot run in the background, so there is no automatic sync. It is one-way, adds new tracks through the usual review step, and <b>never deletes tracks</b> at the destination.</p>`+
+  (note?`<p role="status" class="ok">${esc(note)}</p>`:"")+
+  (d.links.length?d.links.map(linkHtml).join(""):`<p class="lib-empty">No synced playlists yet. Finish a transfer in Transfer Music, then link it below.</p>`)+
+  `<h3 style="font-size:15px;margin:14px 0 6px">Link a finished transfer</h3>`+
+  (cand.length?`<div class="tl">${cand.map(j=>`<div class="tr"><span class="m"><b>${esc(j.dst.name)}</b><span>${esc(j.src.name)} (${esc(pname(j.src.provider))}) → ${esc(pname(j.dst.provider))} · ${esc(fmt(j.finished||j.created))}</span></span><button type="button" class="sm" data-sa="link" data-id="${esc(j.id)}">Link</button></div>`).join("")}</div>`:`<p class="hint">No finished transfers with a destination playlist are waiting to be linked.</p>`)+
+  `<details><summary>What sync can and cannot do</summary><ul><li>Detects new tracks, removed tracks and order changes in the source, by comparing artist, title and version with a saved snapshot.</li><li>Detects tracks added or removed by hand at the destination where the service lets this app read the playlist.</li><li>Cannot delete or reorder destination tracks, and cannot detect edited metadata.</li><li>Source and destination must both be connected when you check. The snapshots are stored in this browser only.</li></ul></details>`;
+ if(active){const n=D.getElementById(active);if(n&&n.focus)n.focus()}}
+D.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#syncb [data-sa]");if(!b)return;const a=b.dataset.sa,id=b.dataset.id;note="";
+ if(a==="link")return linkFromJob(id),redraw();if(a==="check")return check(id);if(a==="apply")return apply(id);if(a==="skip")return skipChanges(id);
+ if(a==="pause")return edit(id,(L)=>{L.paused=true;hist(L,"pause","Paused.")});if(a==="resume")return edit(id,(L)=>{L.paused=false;hist(L,"resume","Resumed.")});
+ if(a==="unlink"){if(!root.confirm("Disconnect this sync? The playlists on the music services are not touched."))return;const d=load();d.links=d.links.filter(l=>l.id!==id);save(d);delete R[id];return redraw()}
+ if(a==="discard")return edit(id,(L)=>{L.pending=null;hist(L,"warn","Discarded an unfinished sync transfer.");delete R[id]});
+ if(a==="open"){const go=D.querySelector('#sn [data-go="transfer"]');if(go)go.click();if(root.plxOpen)root.plxOpen(id)}});
+D.addEventListener("change",e=>{const t=e.target;if(!t||!t.dataset||!t.closest||!t.closest("#syncb"))return;
+ if(t.dataset.sa==="policy")edit(t.dataset.id,L=>{L.policy=POL[t.value]?t.value:"ask";hist(L,"policy","Conflict policy set to “"+POL[L.policy]+"”.")});
+ if(t.dataset.sa==="pick"){const st=R[t.dataset.id];if(!st||!st.res)return;const c=st.res.conflicts[+t.dataset.k];if(!c)return;t.checked?st.res.picked.add(c.key):st.res.picked.delete(c.key);redraw()}});
+const sec=D.getElementById("v-sync");
+if(sec){const mo=new MutationObserver(()=>{if(!sec.hidden)redraw()});mo.observe(sec,{attributes:true,attributeFilter:["hidden"]});redraw()}
+PLX.sync.redraw=redraw;PLX.sync._state=()=>({R,load});
+})(typeof window!=="undefined"?window:globalThis);
+
+
+</script>
+<script>
+/* Complete appearance backup: settings + saved looks + background media (optional), in one JSON file.
+   Saved-look files (Appearance panel) hold settings only; this is the one that can carry the uploaded media. */
+(function(){
+"use strict";
+const D=document,$=id=>D.getElementById(id),esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const APP="plremix-appearance-full",WARN=60*1048576,MAX=250*1048576,KEYS=["plremix:look","plremix:looks"],OKT=["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm"];
+const mb=n=>(n/1048576).toFixed(n<10485760?1:0)+" MB";
+/* same name, version and stores as the appearance engine, so opening it here can never create a different database */
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open("plremix-look",2);r.onupgradeneeded=()=>{const d=r.result;["m","lib","blobs"].forEach(n=>{if(!d.objectStoreNames.contains(n))d.createObjectStore(n,n=="lib"?{keyPath:"id"}:undefined)})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const req=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const b64=blob=>new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>{const s=String(f.result),i=s.indexOf(",");res(i<0?"":s.slice(i+1))};f.onerror=()=>rej(f.error);f.readAsDataURL(blob)});
+const unb64=(s,type)=>{const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type})};
+const get=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const host=D.getElementById("v-bk");if(!host)return;
+const box=D.createElement("div");box.id="abk";box.style.marginTop="16px";
+box.innerHTML=`<h3 style="font-size:15px;margin:0 0 4px">Complete appearance backup</h3>
+<p class="hint" style="margin:0 0 8px">Saves your appearance settings and saved looks, and can include the background pictures, GIFs and videos you uploaded (the Appearance panel’s look files do not include them). Large media makes a large file.</p>
+<label style="display:flex;gap:8px;align-items:center;color:var(--tx)"><input type="checkbox" id="abk-media" checked> Include background media</label>
+<div class="acts" style="margin-top:8px"><button type="button" id="abk-exp">Back up appearance</button><button type="button" class="sec" id="abk-imp">Restore appearance</button><input type="file" id="abk-file" accept=".json,application/json" hidden></div>
+<p class="hint" id="abk-msg" role="status" aria-live="polite"></p>`;
+host.appendChild(box);
+const say=(m,bad)=>{const e=$("abk-msg");e.textContent=m;e.className=bad?"warn":"hint"};
+async function exportAll(){
+ const btn=$("abk-exp");btn.disabled=true;
+ try{
+  const withMedia=$("abk-media").checked;let metas=[],db=null,size=0;
+  if(withMedia){try{db=await idb();metas=await req(db.transaction("lib").objectStore("lib").getAll())}catch(e){say("The background library could not be opened ("+(e&&e.message)+"), so the backup would have no media. Nothing was saved.",1);return}
+   size=metas.reduce((n,m)=>n+(+m.size||0),0);
+   if(size>MAX){say("Your media totals about "+mb(size)+", over the "+mb(MAX)+" limit for a single backup file. Untick “Include background media”, or delete some backgrounds first. Nothing was saved.",1);return}
+   if(size>WARN&&!confirm("Your media totals about "+mb(size)+". The backup file will be about "+mb(size*1.37)+" and may take a while. Continue?"))return}
+  const parts=['{"app":"'+APP+'","v":1,"made":'+Date.now()+',"look":'+JSON.stringify(get(KEYS[0]))+',"looks":'+JSON.stringify(get(KEYS[1]))+',"media":['];
+  let n=0,skipped=0;
+  for(const m of metas){say("Reading "+(m.name||"media")+" ("+(n+1)+" of "+metas.length+")…");
+   const b=await req(db.transaction("blobs").objectStore("blobs").get(m.id));
+   if(!b||!OKT.includes(b.type||m.type)){skipped++;continue}
+   parts.push((n?",":"")+JSON.stringify({meta:m,type:b.type||m.type,data:await b64(b)}));n++}
+  parts.push("]}");
+  const a=D.createElement("a"),u=URL.createObjectURL(new Blob(parts,{type:"application/json"}));a.href=u;a.download="playlist-remixer-appearance-"+new Date().toISOString().slice(0,10)+".json";D.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);
+  say("Saved settings and saved looks"+(withMedia?" with "+n+" media file"+(n===1?"":"s"):" (no media)")+(skipped?"; "+skipped+" media file"+(skipped===1?" was":"s were")+" missing or unsupported and left out":"")+".")
+ }catch(e){say("The backup failed: "+(e&&e.message||e)+". Nothing was changed.",1)}finally{btn.disabled=false}}
+async function importAll(file){
+ try{
+  if(file.size>MAX*1.5+1048576)throw new Error("that file is larger than this app creates ("+mb(file.size)+")");
+  let d;try{d=JSON.parse(await file.text())}catch(e){throw new Error("it is not a JSON file")}
+  if(!d||d.app!==APP||d.v!==1||!Array.isArray(d.media))throw new Error("it is not a complete appearance backup from Playlist Remixer");
+  const media=d.media.filter(x=>x&&x.meta&&typeof x.meta.id==="string"&&OKT.includes(x.type)&&typeof x.data==="string");
+  if(!confirm("Restore appearance from this backup?\n\n• Your current appearance settings and saved looks are replaced (a safety copy is kept in this browser).\n• "+media.length+" background file"+(media.length===1?"":"s")+" will be added; existing ones are never overwritten.\n\nThe page reloads afterwards."))return;
+  /* 1. media first (additive). If this fails nothing else has changed. */
+  let added=0;
+  if(media.length){const db=await idb(),have=new Set(await req(db.transaction("lib").objectStore("lib").getAllKeys()));
+   for(const x of media){if(have.has(x.meta.id))continue;const blob=unb64(x.data,x.type),m={...x.meta,type:x.type,size:blob.size};
+    await new Promise((res,rej)=>{const t=db.transaction(["lib","blobs"],"readwrite");t.objectStore("lib").put(m);t.objectStore("blobs").put(blob,m.id);t.oncomplete=res;t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)});added++}}
+  /* 2. settings, with a safety copy of what is there now */
+  KEYS.forEach((k,i)=>{const cur=get(k);if(cur!=null)try{localStorage.setItem(k+":before-restore",cur)}catch(e){}
+   const nv=i?d.looks:d.look;if(typeof nv==="string"){JSON.parse(nv);localStorage.setItem(k,nv)}});
+  say("Restored. "+added+" background file"+(added===1?"":"s")+" added. Reloading…");setTimeout(()=>location.reload(),900)
+ }catch(e){say("Nothing was restored: "+(e&&e.message||e)+".",1)}}
+$("abk-exp").onclick=exportAll;$("abk-imp").onclick=()=>$("abk-file").click();
+$("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)importAll(f)};
+})();
+</script>
+<script>
 /* Navigation shell: five primary destinations plus a grouped More menu. */
 (function(){
 const PRIMARY=[["home","Home","🏠"],["transfer","Transfer","🔀"],["mymusic","My Music","🎵"],["tools","Playlist Tools","🛠"],["more","More","•••"]];
@@ -2038,7 +2546,7 @@ nav.innerHTML=PRIMARY.filter(x=>x[0]!=="more").map(([id,n,ic])=>`<button type="b
   const online=navigator.onLine!==false,file=location.protocol==="file:";
   const svc=(PLX&&PLX.all?PLX.all():[]).map(a=>{const c=a.isConnected&&a.isConnected();return `<span class="pill${c?" on":""}">${esc(a.name)}: ${c?"Connected":esc((PLX.STATUS||{})[a.status]||a.status||"")}</span>`}).join("");
   const jobs=recentJobs().slice(0,3).map(j=>{const nm=(j.spec&&j.spec.name)||(j.playlist&&j.playlist.name)||(j.dst&&j.dst.name)||"Playlist",d=PLX.get&&j.dst&&PLX.get(j.dst.provider);return `<li>${esc(nm)} → ${esc(d?d.name:(j.dst&&j.dst.provider)||"?")} · ${esc(j.state||"")} · ${esc(fmt(j.created))}</li>`}).join("");
-  const w=[];if(typeof LOADERR!=="undefined"&&LOADERR)w.push("Your saved library couldn’t be read. A copy was kept and nothing was deleted. See Backups.");if(PERSIST.err)w.push("The last change could not be saved to browser storage. Download a backup, then free some space.");if(PERSIST.mode==="ls"&&PERSIST.info)w.push(PERSIST.info);if(file)w.push("Opened as a file: connecting Spotify or Apple Music needs a secure web address. Local features still work offline.");
+  const w=[];if(PLX.lsBlocked)w.push("This browser is blocking site storage, so settings and transfer history will be forgotten when you close this page. Allow site data for this page to keep them.");if(typeof LOADERR!=="undefined"&&LOADERR)w.push("Your saved library couldn’t be read. A copy was kept and nothing was deleted. See Backups.");if(PERSIST.err)w.push("The last change could not be saved to browser storage. Download a backup, then free some space.");if(PERSIST.mode==="ls"&&PERSIST.info)w.push(PERSIST.info);if(file)w.push("Opened as a file: connecting Spotify or Apple Music needs a secure web address. Local features still work offline.");
   b.innerHTML=`<div class="hero"><button type="button" data-go="transfer">Transfer Music</button><span class="hint" style="margin:0">Move a playlist between supported services, or start from an imported file.</span></div>
   <div class="kv"><div><b>${n}</b>imported entries</div><div><b>${uniq}</b>unique tracks</div><div><b>${pls}</b>playlists across ${srcs} source${srcs==1?"":"s"}</div><div><b>${online?"Online":"Offline"}</b>${online?"browser reports a connection":"local tools remain available"}</div></div>
   ${w.map(x=>`<div class="warn" role="note">${esc(x)}</div>`).join("")}
@@ -2057,17 +2565,22 @@ const LIBEDIT=[
 const libEsc=v=>esc(v==null?"":String(v));
 const libVal=(o,k)=>k==="g"?(o.g&&typeof o.g[Symbol.iterator]==="function"?[...o.g].join(", "):String(o.g||"")):o[k];
 const libCmpText=(a,b)=>NC.compare(String(a??""),String(b??""));
-function libFiltered(){let a=LIBUI.all.filter(o=>{
- const q=LIBUI.q.trim().toLocaleLowerCase();
- if(q){const h=[o.t,o.a,o.fa,o.alb,[...(o.g||[])].join(" "),o.sg,o.prod,o.lab,o.lang,o.isrc,[...o.srcs].join(" "),[...o.pls].join(" ")].join(" ").toLocaleLowerCase();if(!h.includes(q))return false}
+const libFold=s=>String(s==null?"":s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+const LIBSORT={all:null,key:"",rows:null};
+function libSorted(){const key=LIBUI.sort+"|"+LIBUI.dir;if(LIBSORT.rows&&LIBSORT.all===LIBUI.all&&LIBSORT.key===key)return LIBSORT.rows;
+ const a=LIBUI.all.slice();
+ const fields={title:o=>o.t,artist:o=>o.a,album:o=>o.alb,source:o=>o._sortSource||"",playlist:o=>o._sortPlaylist||"",key:o=>o.key};
+ const k=LIBUI.sort,dir=LIBUI.dir;
+ a.sort((x,y)=>{let vx,vy,r=0;if(["tempo","e","yr","plays","dur"].includes(k)){vx=x[k];vy=y[k];const mx=vx==null||vx==="",my=vy==null||vy==="";if(mx||my)return mx?(my?0:1):-1;r=(+vx)-(+vy)}else r=libCmpText(fields[k]?fields[k](x):x.t,fields[k]?fields[k](y):y.t);return (r*dir)||tieBreak(x,y)});
+ LIBSORT.all=LIBUI.all;LIBSORT.key=key;LIBSORT.rows=a;return a;
+}
+function libFiltered(){const toks=libFold(LIBUI.q).split(" ").filter(Boolean);let a=libSorted().filter(o=>{
+ if(toks.length){const h=o._searchText||"";for(let t=0;t<toks.length;t++)if(h.indexOf(toks[t])<0)return false}
  if(LIBUI.src&&!o.srcs.has(LIBUI.src))return false;
  if(LIBUI.pl&&!o.pls.has(LIBUI.pl))return false;
  if(LIBUI.missing){const k=LIBUI.missing;const empty=v=>v==null||v===""||(v instanceof Set&&v.size===0);if(k==="any"){if(![o.alb,o.g,o.tempo,o.e,o.yr,o.key,o.isrc,o.dur,o.prod,o.lab].some(empty))return false}else if(empty(k==="genre"?o.g:o[k]))return false}
  return true;
  });
- const fields={title:o=>o.t,artist:o=>o.a,album:o=>o.alb,source:o=>[...o.srcs].join(", "),playlist:o=>[...o.pls].join(", "),key:o=>o.key};
- const k=LIBUI.sort,dir=LIBUI.dir;
- a.sort((x,y)=>{let vx,vy,r=0;if(["tempo","e","yr","plays","dur"].includes(k)){vx=x[k];vy=y[k];const mx=vx==null||vx==="",my=vy==null||vy==="";if(mx||my)return mx?(my?0:1):-1;r=(+vx)-(+vy)}else r=libCmpText(fields[k]?fields[k](x):x.t,fields[k]?fields[k](y):y.t);return (r*dir)||tieBreak(x,y)});
  return a;
 }
 function libUpdateSelection(){const n=LIBUI.selected.size,el=g("lib-selection"),bulk=g("lib-selection-count");if(el)el.textContent=n+" selected";if(bulk)bulk.textContent=n+" selected";const a=g("lib-export-selected"),b=g("lib-build-selected");if(a)a.disabled=!n;if(b)b.disabled=!n}
@@ -2083,7 +2596,7 @@ function libRenderRows(){const box=g("lib-results");if(!box)return;const all=lib
  const prev=g("lib-prev"),next=g("lib-next");if(prev)prev.disabled=LIBUI.page===0;if(next)next.disabled=LIBUI.page>=pages-1;
  libUpdateSelection();
 }
-function libRefreshCache(){try{LIBUI.all=aggregate().L;const valid=new Set(LIBUI.all.map(x=>String(x.id)));LIBUI.selected.forEach(id=>{if(!valid.has(id))LIBUI.selected.delete(id)})}catch(e){LIBUI.all=[];const st=g("stat");if(st)st.textContent="The library view could not group your tracks: "+(e.message||String(e))}}
+function libRefreshCache(){try{LIBUI.all=aggregate().L;const valid=new Set();for(const o of LIBUI.all){valid.add(String(o.id));o._searchText=libFold([o.t,o.a,o.fa,o.alb,[...(o.g||[])].join(" "),o.sg,o.prod,o.lab,o.lang,o.isrc,[...o.srcs].join(" "),[...o.pls].join(" ")].filter(Boolean).join(" "));o._sortSource=[...o.srcs].join(", ");o._sortPlaylist=[...o.pls].join(", ")}LIBUI.selected.forEach(id=>{if(!valid.has(id))LIBUI.selected.delete(id)})}catch(e){LIBUI.all=[];const st=g("stat");if(st)st.textContent="The library view could not group your tracks: "+(e.message||String(e))}}
 function libSaveMetadata(form){const id=form.dataset.libForm,o=LIBUI.all.find(x=>String(x.id)===String(id));if(!o)return;
  const fd=new FormData(form),next={};for(const [k] of LIBEDIT){if(k==="art"&&form.dataset.artDirty!=="1")continue;let v=String(fd.get(k)??"").trim();if(k==="g")next[k]=v?v.split(/[;,]/).map(x=>x.trim().toLowerCase()).filter(Boolean):[];
   else if(k==="ex")next[k]=v==="true"?true:v==="false"?false:null;
@@ -2103,6 +2616,8 @@ function libSaveMetadata(form){const id=form.dataset.libForm,o=LIBUI.all.find(x=
  if(!save()){decLoad(old);throw new Error("The browser could not save these metadata changes. Nothing was changed.")}
  libRefreshCache();const st=g("stat");if(st)st.textContent="Metadata saved for “"+next.t+"”.";libRenderRows();
 }
+/* expose for the enrichment code, which runs outside this closure */
+window.libRefreshCache=libRefreshCache;window.libRenderRows=libRenderRows;
 function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  const sources=[...new Set(lib.map(x=>x.src).filter(Boolean))].sort(NC.compare);
  const pls=[...new Map(lib.map(x=>[String(x.src)+"::"+String(x.pl),{key:String(x.src)+":"+String(x.pl),label:String(x.src)+" — "+String(x.pl)}])).values()].sort((a,z)=>NC.compare(a.label,z.label));
@@ -2117,7 +2632,7 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  <p class="hint">The library combines entries it recognizes as the same recording. Editing metadata creates a manual decision for that recording; your original imported entries remain available in backups. Online catalog details are marked separately and only fill blank fields. A lookup cannot reliably provide BPM, key, energy, producers, writers, labels, publisher, language or ISRC.</p>`;
  const sort=g("lib-sort");if(sort)sort.value=LIBUI.sort;
  const on=(id,ev,fn)=>{const el=g(id);if(el)el.addEventListener(ev,fn)};
- on("lib-q","input",e=>{LIBUI.q=e.target.value;LIBUI.page=0;libRenderRows()});
+ on("lib-q","input",e=>{LIBUI.q=e.target.value;LIBUI.page=0;clearTimeout(LIBUI.searchTimer);LIBUI.searchTimer=setTimeout(libRenderRows,110)});
  on("lib-source","change",e=>{LIBUI.src=e.target.value;LIBUI.page=0;LIBUI.pl="";const sel=g("lib-playlist");if(sel){const opts=[...new Map(lib.filter(x=>!LIBUI.src||x.src===LIBUI.src).map(x=>[String(x.src)+":"+String(x.pl),{key:String(x.src)+":"+String(x.pl),label:String(x.src)+" — "+String(x.pl)}])).values()].sort((a,z)=>NC.compare(a.label,z.label));sel.innerHTML='<option value="">All playlists</option>'+opts.map(x=>`<option value="${libEsc(x.key)}">${libEsc(x.label)}</option>`).join("")}libRenderRows()});
  on("lib-playlist","change",e=>{LIBUI.pl=e.target.value;LIBUI.page=0;libRenderRows()});
  on("lib-missing","change",e=>{LIBUI.missing=e.target.value;LIBUI.page=0;libRenderRows()});
@@ -2133,7 +2648,7 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
   if(action==="reset-filters"){LIBUI.q="";LIBUI.src="";LIBUI.pl="";LIBUI.missing="";LIBUI.page=0;libDraw()}
   else if(action==="import"){const el=g("file");if(el)el.click()}
   else if(action==="enrich-missing"){enrichLibraryMissing()}
-  else if(action==="enrich-one"){const id=a.dataset.trackId;const groups=enrichmentGroups([id],true);if(groups.length){ENRICH.cache.clear();runEnrichment(groups)}else enrichStatus("This track already has the metadata fields available from the connected catalogs.")}
+  else if(action==="enrich-one"){const id=a.dataset.trackId;const groups=enrichmentGroups([id],true);if(groups.length){deleteEnrichCacheFor(groups[0].track);runEnrichment(groups)}else enrichStatus("This track already has the metadata fields available from the connected catalogs.")}
   else if(action==="use-art-candidate"){applyReviewedAppleCandidate(a.dataset.trackId,+a.dataset.candidateIndex)}
   else if(action==="enrich-stop"){stopEnrichment()}
   else if(action==="select-filtered"){libFiltered().forEach(o=>LIBUI.selected.add(String(o.id)));b.querySelectorAll("[data-lib-select]").forEach(c=>c.checked=LIBUI.selected.has(c.dataset.libSelect));libUpdateSelection()}
@@ -2150,8 +2665,8 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  const bi=g("bkinfo");if(bi)bi.innerHTML=`Library storage: <b>${st}</b>. ${esc(PERSIST.info||"")}`;
  const sb=g("setb");if(sb)sb.innerHTML=`<h3 style="font-size:15px;margin:0 0 4px">How this page is running</h3>
  <p style="margin:0 0 8px">${location.protocol==="file:"?"Opened directly as a file (local mode).":"Served from "+esc(location.origin)+(location.protocol==="https:"?" (secure).":" (not https).")}</p>
- <p class="hint" style="margin:0 0 8px"><b>Works from a file, offline:</b> importing, library, playlist tools, duplicates, insights, backups and restores, appearance, backgrounds and effects.<br><b>Needs a web address:</b> signing in to Spotify or Apple Music. Apple Music also needs a small token service you host; no private keys ever go in this page.</p>
- <h3 style="font-size:15px;margin:12px 0 4px">Storage</h3><p style="margin:0">Library storage: <b>${st}</b>. Spotify’s sign-in is kept in this browser tab’s session storage (removed when the tab closes or you press Disconnect). Apple Music’s developer token and sign-in are held in memory by this app; Apple’s MusicKit script may keep its own sign-in record in the browser.</p>`}
+ <p class="hint" style="margin:0 0 8px"><b>Works from a file, offline:</b> importing, library, playlist tools, duplicates, insights, backups and restores, appearance, backgrounds and effects.<br><b>Needs a web address:</b> signing in to Spotify, Apple Music or YouTube. Apple Music also needs a small token service you host; no private keys ever go in this page.</p>
+ <h3 style="font-size:15px;margin:12px 0 4px">Storage</h3><p style="margin:0">Library storage: <b>${st}</b>. Spotify’s sign-in is kept in this browser tab’s session storage (removed when the tab closes or you press Disconnect). YouTube’s sign-in is held in memory only. Apple Music’s developer token and sign-in are held in memory by this app; Apple’s MusicKit script may keep its own sign-in record in the browser.</p>`}
 
  function show(v,focus){if(v==="appearance"){const more=g("sn-more");if(more)more.open=false;const f=g("fab");if(f)f.click();return}
   if(!VALID.has(v))v="home";cur=v;
