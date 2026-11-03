@@ -148,20 +148,6 @@ body{padding-left:208px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ok:#4ccf84;--warn:#f2a65a}}
 :root[data-theme="dark"]{--ok:#4ccf84;--warn:#f2a65a}
 main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
-
-/* ===== v31 fixes ===== */
-#stat:not(:empty){position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:25;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;box-shadow:0 2px 10px #0002;cursor:pointer}
-#stat .warn,#stat .ok{display:block;border:0;padding:0;margin:0}
-@media(max-width:900px){
-body{padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
-#fab{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
-#sn>button{flex:1 1 0;min-width:0;padding:6px 2px;font-size:11px;line-height:1.2}
-#sn>details{flex:1 1 0;min-width:0}
-#sn>details>summary{min-width:0;padding:6px 2px;font-size:11px}
-body:has(#sn details[open]) #fab{display:none}}
-@media(max-width:900px),(pointer:coarse){main details>summary{min-height:40px;padding-top:10px;padding-bottom:10px;box-sizing:border-box}input[type=range]{min-height:32px}input[type=file]{min-height:36px}}
-@media(max-width:900px){#libb .row>div[style*="flex:0 0 auto"]{flex:1 1 100%!important;display:flex;flex-wrap:wrap;gap:8px}#libb .row>div[style*="flex:0 0 auto"] button{margin:0}}
-summary,button.sec,#dr .tabs button{color:var(--acx,var(--ac))}
 </style>
 </head>
 <body>
@@ -189,10 +175,11 @@ summary,button.sec,#dr .tabs button{color:var(--acx,var(--ac))}
 <div id="bkinfo" class="hint"></div></section>
 
 <section class="card vw" id="v-set" data-views="settings" aria-labelledby="seh"><h2 id="seh">Settings</h2><div id="setb"></div></section>
+<section class="card vw" id="v-games" data-views="games" aria-labelledby="gmh"><h2 id="gmh">Mini games</h2><div id="gamesb"></div></section>
 
 <section class="card vw" id="v-support" data-views="support" aria-labelledby="support-h">
 <h2 id="support-h">Support</h2>
-<p class="hint" style="margin-top:0">Send a support request to the Playlist Remixer team. Your message and a random browser ID will be stored. To help diagnose issues, we also record your IP address, browser/device user-agent, and approximate location with the ticket. Approximate location is provided by Cloudflare and is not GPS. Include an email address or Discord username in your message if you want a reply. If the app crashes while you use the published website, it may also send a short automatic error report (the error text, the page name and your random browser ID); nothing from your music library is included.</p>
+<p class="hint" style="margin-top:0">Send a support request to the Playlist Remixer team. Your message and a random browser ID will be stored. To help diagnose issues, we also record your IP address, browser/device user-agent, and approximate location with the ticket. Approximate location is provided by Cloudflare and is not GPS. Include an email address or Discord username in your message if you want a reply.</p>
 <form id="pr-support-form">
 <label for="pr-support-subject">Subject</label><input id="pr-support-subject" type="text" maxlength="150" required placeholder="What do you need help with?">
 <label for="pr-support-message" style="margin-top:10px">Message</label><textarea id="pr-support-message" maxlength="5000" required placeholder="Describe the problem and what you expected to happen."></textarea>
@@ -398,16 +385,15 @@ window.__plxArtworkLoaded=(ids)=>queueArtworkEvents(ids,"loaded",false);
 window.__plxArtworkFailed=(ids,manual)=>queueArtworkEvents(ids,"failed",manual);
 const cln=v=>v==null?null:(String(v).replace(/[\u0000-\u001f\u007f]/g," ").trim().slice(0,300)||null);
 const boolOf=v=>{const x=String(v??"").trim().toLowerCase();return /^(true|1|yes|y|explicit|e)$/.test(x)?true:/^(false|0|no|n|clean|c|not explicit)$/.test(x)?false:null};
-function sane(o){const bad=v=>v!=null&&(typeof v!=="number"||isNaN(v)||v<0||v>1);["e","v","dz"].forEach(k=>{if(bad(o[k]))o[k]=null});if(o.tempo!=null&&!(o.tempo>0&&o.tempo<=300))o.tempo=null;if(o.plays!=null&&!(o.plays>=0))o.plays=null;return o}
 function mk(get,src,pl){
  const t=cln(get(/^(track ?name|title|song( name)?|name|track)$|tracknam|master_metadata_track_name/i));
  const a0=cln(get(/^(main ?)?artists?( name)?s?$|master_metadata_album_artist_name/i)||get(/^(?!.*(album|feat)).*artist/i));
  if(!t||!a0)return null;
  const parts=a0.split(/;|\s(?:feat\.?|ft\.?|featuring)\s/i).map(x=>x.trim()).filter(Boolean),ft=cln(get(/feat(ured|uring)?[ _-]?artists?/i)),g=get(/genre/i)||"",rd=get(/release[ _]?date|^year$/i),T=re=>cln(get(re)),N=re=>num(get(re));
- return sane({t,a:parts[0]||a0,fa:ft||(parts.length>1?parts.slice(1).join("; "):null),aa:T(/album[ _]?artists?/i),g:String(g).split(/[;,]/).map(x=>x.trim().toLowerCase()).filter(Boolean),sg:T(/sub[ _-]?genre/i),art:importArtwork(get(/(?:artwork|cover(?:[ _-]?(?:art|image))?|album[ _-]?art(?:work)?|images?|thumbnail)(?:[ _-]?(?:url|uri|src|link))?$/i)),
+ return{t,a:parts[0]||a0,fa:ft||(parts.length>1?parts.slice(1).join("; "):null),aa:T(/album[ _]?artists?/i),g:String(g).split(/[;,]/).map(x=>x.trim().toLowerCase()).filter(Boolean),sg:T(/sub[ _-]?genre/i),art:importArtwork(get(/(?:artwork|cover(?:[ _-]?(?:art|image))?|album[ _-]?art(?:work)?|images?|thumbnail)(?:[ _-]?(?:url|uri|src|link))?$/i)),
   src,pl:get(/playlist/i)||pl||"Imported",plays:N(/play ?count|^plays$/i),isrc:isrcOk(get(/isrc/i)),dur:(()=>{get.last="";const dv=get(/duration|length|^ms$/i),hd=String(get.last||"");return durSec(dv,/(^|[^a-z])ms$|millisec|\(ms\)|_ms/i.test(hd)?"ms":/sec|\(s\)|_s$/i.test(hd)?"s":null)})(),alb:T(/^album([ _]name)?$|album_name|master_metadata_album_album_name/i),at:T(/album[ _]?type/i),
   e:N(/^energy$/i),tempo:N(/^tempo$|^bpm$/i),v:N(/valence/i),dz:N(/danceab/i),key:get(/^(key|camelot)$/i),mode:get(/^mode$/i),prod:T(/producer/i),sw:T(/songwriter|writer/i),cm:T(/composer/i),lab:T(/label/i),pub:T(/publisher/i),lang:T(/language/i),
-  ex:boolOf(get(/explicit|content[ _]?rating|clean/i)),rt:N(/^rating$|^stars?$/i),ver:T(/^(recording[ _]?)?version$/i),rd:cln(rd),ord:T(/original[ _]?release/i),tn:numN(get(/track[ _]?(number|no|num)|^track_number/i)),dn:numN(get(/disc[ _]?(number|no|num)/i)),yr:yearOf(rd)})
+  ex:boolOf(get(/explicit|content[ _]?rating|clean/i)),rt:N(/^rating$|^stars?$/i),ver:T(/^(recording[ _]?)?version$/i),rd:cln(rd),ord:T(/original[ _]?release/i),tn:numN(get(/track[ _]?(number|no|num)|^track_number/i)),dn:numN(get(/disc[ _]?(number|no|num)/i)),yr:yearOf(rd)}
 }
 /* nested JSON (Spotify-style {track:{name,artists:[{name}],album:{name}}}) -> flat key/value map */
 function flat(o,pre,out){for(const k in o){const v=o[k],p=/^(track|item|song|data)$/i.test(k)&&!pre?"":(pre?pre+" ":"")+k;
@@ -452,10 +438,10 @@ function parseLine(raw){
  const c=cln,T=c(t),A=c(a);if(!T||!A)return{err:"the artist or title is empty"};
  return{t:T,a:A,fa:c(fa.filter(Boolean).join("; "))}}
 function parse(text,src,pl){
- parse.skip=0;parse.errs=[];parse.jsonBad=false;const bad=(n,w)=>{parse.errs.push(n+": "+w);parse.skip=parse.errs.length};text=text.replace(/^\uFEFF/,"").trim();if(!text)return[];
+ parse.skip=0;parse.errs=[];const bad=(n,w)=>{parse.errs.push(n+": "+w);parse.skip=parse.errs.length};text=text.replace(/^\uFEFF/,"").trim();if(!text)return[];
  const out=[];
  if(/^[\[{]/.test(text)){
-  let J;try{J=JSON.parse(text)}catch(e){J=undefined;parse.jsonBad=true}
+  let J;try{J=JSON.parse(text)}catch(e){J=undefined}
   if(J!==undefined){let objs=[];collect(J,objs);if(!objs.length){collect2(J,objs);objs=objs.map(o=>flat(o,"",{}))}
    objs.forEach((o,n)=>{try{const get=re=>{for(const k in o){if(re.test(k)&&(typeof o[k]=="string"||typeof o[k]=="number"||typeof o[k]=="boolean")&&o[k]!=="")return(get.last=k,o[k])}return null};
     const x=mk(get,src,pl);if(x)out.push(x);else bad("JSON entry "+(n+1),"missing a title or an artist")}catch(e){bad("JSON entry "+(n+1),"couldn’t be read")}});return out}
@@ -482,7 +468,6 @@ let IMP=null,IMPSUM=null;
 function addRows(rows,label,sig){return stageImport(rows,label,sig)}
 function stageImport(rows,label,sig){
  const errs=(parse.errs||[]).map(e=>(label?label+" – ":"")+e);
- if(!rows.length&&parse.jsonBad){$("stat").textContent="That looks like JSON, but it isn’t valid — check for a missing bracket, quote or comma."+(label?" ("+label+")":"");return false}
  if(!rows.length){$("stat").textContent="I couldn’t find any tracks in "+(label||"that")+". Try “Artist - Title” lines or a CSV with track and artist columns."+(errs.length?" ("+errs.slice(0,3).join("; ")+")":"");return false}
  if(sig&&(lib.some(x=>x.b===sig)||(IMP&&IMP.batches.some(b=>b.sig===sig)))){$("stat").textContent="That exact list is already in your library or in the import you’re reviewing, so I didn’t add it again."+(label?" ("+label+")":"");return true}
  if(!IMP)IMP={rows:[],batches:[],errs:[],ex:new Set(),dc:{},cc:{},show:null};IMPSUM=null;
@@ -1082,7 +1067,7 @@ const EK="plremix:expf";let expSel=(()=>{try{const a=JSON.parse(localStorage.get
 function csvCell(v,isNum){if(v==null||v==="")return"";let x=String(v);if(!isNum&&/^[\s\u0000-\u001f\u007f\u00a0\ufeff]*[=+\-@]/.test(x))x="'"+x;return /[",\n\r]/.test(x)||x!==x.trim()?'"'+x.replace(/"/g,'""')+'"':x}
 function csvOut(tracks,sel){const F=FIELDS.filter(f=>sel.has(f[0]));return"\uFEFF"+[F.map(f=>csvCell(f[1])).join(",")].concat(tracks.map(x=>F.map(f=>{const raw=f[2]?f[2](x[f[0]]):x[f[0]];return csvCell(raw,typeof raw=="number")}).join(","))).join("\r\n")}
 function dl(i){const t=csvOut(PL[i].t,expSel),u=URL.createObjectURL(new Blob([t],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");a.href=u;a.download=(PL[i].n.replace(/[^\w ]/g,"").trim().replace(/\s+/g,"-")||"playlist")+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);const m=$("m"+i);if(m)m.textContent="Downloaded"}
-function expUI(){const d=document.createElement("details");d.id="expd";d.dataset.views="tools mymusic insights";d.innerHTML='<summary>CSV export columns</summary><p class="hint">Choose which columns “Download CSV” includes. Empty cells mean the data isn’t in your library.</p><div class="chips" id="expc" style="gap:6px 14px">'+FIELDS.map(f=>`<label style="display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-f="${f[0]}"${expSel.has(f[0])?" checked":""}> ${esc(f[1])}</label>`).join("")+"</div>";
+function expUI(){const d=document.createElement("details");d.id="expd";d.innerHTML='<summary>CSV export columns</summary><p class="hint">Choose which columns “Download CSV” includes. Empty cells mean the data isn’t in your library.</p><div class="chips" id="expc" style="gap:6px 14px">'+FIELDS.map(f=>`<label style="display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-f="${f[0]}"${expSel.has(f[0])?" checked":""}> ${esc(f[1])}</label>`).join("")+"</div>";
  d.addEventListener("change",e=>{const k=e.target.dataset.f;if(!k)return;e.target.checked?expSel.add(k):expSel.delete(k);if(!expSel.size){expSel.add("t");e.target.checked=false;d.querySelector('[data-f="t"]').checked=true}try{localStorage.setItem(EK,JSON.stringify([...expSel]))}catch(x){}});$("out").before(d)}
 const yearOf=v=>{const m=String(v||"").match(/(?:19|20)\d\d/);return m?+m[0]:null};
 const PC={maj:[8,3,10,5,12,7,2,9,4,11,6,1],min:[5,12,7,2,9,4,11,6,1,8,3,10]};
@@ -1100,7 +1085,6 @@ function mixOrder(arr){const pool=arr.slice(),res=[];if(!pool.length)return res;
  res.push(pool.splice(pool.reduce((m,x,i)=>(x.tempo??1e9)<(pool[m].tempo??1e9)?i:m,0),1)[0]);
  while(pool.length){const l=res[res.length-1];let bi=0,bs=-1;pool.forEach((x,i)=>{const s=2*kc(l,x)+1.5*bc(l,x)+.05*x.score;if(s>bs){bs=s;bi=i}});res.push(pool.splice(bi,1)[0])}
  return res}
-function dropCards(prefix){[...$("out").querySelectorAll("section.pl")].forEach(s=>{const h=s.querySelector("h2 span");if(h&&h.textContent.startsWith(prefix))s.remove()})}
 function show(p){window.PL=window.PL||[];const i=PL.length;PL.push(p);$("out").insertAdjacentHTML("afterbegin",card(p,i));goOut()}
 const PINK="plremix:pins";let PINS=(()=>{try{const d=JSON.parse(localStorage.getItem(PINK)||"{}"),ok=a=>Array.isArray(a)?a.filter(z=>z&&typeof z.k=="string"):[];return{p:ok(d.p),x:ok(d.x)}}catch(e){return{p:[],x:[]}}})();
 const tk=x=>norm(x.a)+"|"+norm(x.t),pinSave=()=>{try{localStorage.setItem(PINK,JSON.stringify(PINS))}catch(e){}};
@@ -1116,8 +1100,6 @@ function smart(){
  if(!lib.length){$("stat").textContent="Add some music first.";return}
  const{L}=aggregate(),v=id=>{const s=$(id).value;return s===""?null:+s},R=[];
  [["b1","tempo",1],["b2","tempo",0],["e1","e",1],["e2","e",0],["y1","yr",1],["y2","yr",0]].forEach(([id,f,lo])=>{const n=v(id);if(n!=null)R.push(x=>x[f]!=null&&(lo?x[f]>=n:x[f]<=n))});
- for(const[lo,hi,nm]of[["b1","b2","BPM"],["e1","e2","Energy"],["y1","y2","Year"]]){const a=v(lo),b=v(hi);if(a!=null&&b!=null&&a>b){$("stat").textContent=nm+" “from” ("+a+") is higher than “to” ("+b+"). Swap them and try again.";return}}
- dropCards("🧩 Smart playlist");
  const q=$("sq").value.trim().toLowerCase();
  if(q)R.push(x=>[x.a,x.t,x.prod,x.lab,[...x.g].join(" ")].join(" ").toLowerCase().includes(q));
  const hay=x=>[x.a,x.t,x.prod,x.lab,[...x.g].join(" ")].join(" ").toLowerCase(),
@@ -1146,7 +1128,6 @@ function related(){
  const{L}=aggregate(),ex=x=>[x.t,x.a,x.a+" - "+x.t,x.a+" – "+x.t].some(z=>z.toLowerCase()==s)?0:1,a=L.filter(x=>(x.a+" "+x.t).toLowerCase().includes(s)).sort(sorter((p,q)=>ex(p)-ex(q),cmpNum(x=>x.score,-1)))[0];
  if(!a){$("stat").textContent="I couldn’t find that song in your library.";return}
  const t=L.filter(x=>x!==a&&!PINS.x.some(q=>q.k==tk(x))).map(x=>{const r=relScore(a,x);return{...x,rs:r.s,why:r.why}}).sort(sorter(cmpNum(x=>x.rs,-1))).slice(0,20);
- dropCards("🔗 Related to");
  show({n:"🔗 Related to "+a.a+" – "+a.t,d:"Ranked with the weights under “Adjust what related means”. Each row says which factors matched.",t});
 }
 function seqTxt(t){let s=0,n=0;const m=Math.max(0,t.length-1);for(let i=0;i<m;i++){const a=t[i],b=t[i+1];if(cam(a)&&cam(b)&&a.tempo&&b.tempo){s+=(2*kc(a,b)+1.5*bc(a,b))/3.5;n++}}
@@ -2096,21 +2077,12 @@ const rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)),hx=a=>"#"+a.map(v=>Math.
 const mix=(a,b,t)=>{const x=rgb(a),y=rgb(b);return hx(x.map((v,i)=>v*t+y[i]*(1-t)))};
 const lum=h=>{const c=rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]},fg=h=>lum(h)>.179?"#111111":"#ffffff";
 const mq=matchMedia("(prefers-reduced-motion: reduce)"),nm=()=>mq.matches||!S.anim;
-function theme(){const st=R.style;["--bg","--card","--tx","--mu","--ac","--bd","--on","--ac2","--warn","--acx"].forEach(k=>st.removeProperty(k));R.removeAttribute("data-theme");B.classList.remove("gr","gs");B.style.backgroundImage="";st.colorScheme="";
+function theme(){const st=R.style;["--bg","--card","--tx","--mu","--ac","--bd","--on","--ac2"].forEach(k=>st.removeProperty(k));R.removeAttribute("data-theme");B.classList.remove("gr","gs");B.style.backgroundImage="";st.colorScheme="";
  const t=S.th=="custom"?S.cu:T[S.th];if(S.th=="light"||S.th=="dark")R.setAttribute("data-theme",S.th);
  if(t){st.setProperty("--bg",t.bg);st.setProperty("--card",t.card);st.setProperty("--tx",t.tx);st.setProperty("--mu",mix(t.tx,t.bg,.6));st.setProperty("--bd",S.th=="hc"?t.tx:mix(t.tx,t.bg,.2));st.setProperty("--ac",t.ac);st.colorScheme=lum(t.bg)<.3?"dark":"light";
   if(t.gr){B.style.backgroundImage=`linear-gradient(135deg,${t.gr.join(",")})`;B.classList.add("gr")}}
  if(S.cgOn){const c=x=>okc(x)?x:"#888888";B.style.backgroundImage=`linear-gradient(${(+S.cga||0)%361}deg,${c(S.cc1)},${c(S.cc2)},${c(S.cc3)})`;B.classList.remove("gr");B.classList.add(S.cgan?"gr":"gs")}
- const ac=S.ac||(t&&t.ac);if(ac){st.setProperty("--ac",ac);st.setProperty("--on",fg(ac));st.setProperty("--ac2","color-mix(in srgb,var(--ac) 16%,var(--card))")}
- /* Accessible text colours derived per theme, so muted text, warnings and link/secondary-button text always reach WCAG AA (4.5:1) on this theme's own backgrounds. */
- if(t&&okc(t.bg)&&okc(t.card)&&okc(t.tx)){
-  const cr=(a,b)=>{const x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
-  const fit=(c,bgs)=>{for(let k=0;k<=20;k++){const m=mix(t.tx,c,k/20);if(bgs.every(b=>cr(m,b)>=4.5))return m}return t.tx};
-  const a=okc(ac)?ac:t.ac;
-  st.setProperty("--mu",fit(mix(t.tx,t.bg,.6),[t.bg,t.card]));
-  st.setProperty("--warn",fit(lum(t.bg)<.3?"#f2a65a":"#b45309",[t.bg,t.card]));
-  st.setProperty("--acx",fit(a,[t.bg,t.card,mix(a,t.card,.16)]));
- }}
+ const ac=S.ac||(t&&t.ac);if(ac){st.setProperty("--ac",ac);st.setProperty("--on",fg(ac));st.setProperty("--ac2","color-mix(in srgb,var(--ac) 16%,var(--card))")}}
 let fl=null;
 function look(){const st=R.style;theme();R.className=[`p-${S.ps}`,`b-${S.bs}`,`l-${S.ly}`,S.sh?"sh":"",nm()?"nm":"",R.classList.contains("pv")?"pv":""].join(" ");
  st.setProperty("--po",S.po+"%");st.setProperty("--pb",S.pb+"px");st.setProperty("--pr",S.pr+"px");st.setProperty("--mw",S.mw=="full"?"100%":S.mw+"px");st.setProperty("--dn",S.dn);
@@ -2625,17 +2597,8 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
   script.onerror=()=>{turnstileLoading=false;if(status)status.textContent="Could not load human verification. Check your connection and refresh."};
   document.head.appendChild(script);
  }
- const OFFLINE=location.protocol==="file:";
- if(form&&OFFLINE){
-  const btn=document.getElementById("pr-support-submit");if(btn)btn.disabled=true;
-  const m=document.getElementById("pr-turnstile");if(m)m.textContent="";
-  if(status)status.textContent="Support requests can only be sent from the published website, not from a downloaded copy of the app.";
- }else if(form){
-  /* Load the third-party verification script only when the Support page is actually opened. */
-  if("IntersectionObserver"in window){const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting)){io.disconnect();loadTurnstile()}});io.observe(form)}
-  else loadTurnstile();
- }
- if(form&&!OFFLINE){
+ loadTurnstile();
+ if(form){
   form.addEventListener("submit",async e=>{
    e.preventDefault();
    const btn=document.getElementById("pr-support-submit");
@@ -2647,25 +2610,19 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
    if(!turnstileToken){status.textContent="Complete the human verification before submitting.";return}
    btn.disabled=true;status.textContent="Sending…";
    try{
-    let userId=await ensureUser();
-    const post=()=>fetch(API+"/api/tickets",{
+    const userId=await ensureUser();
+    const r=await fetch(API+"/api/tickets",{
      method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},
      body:JSON.stringify({userId,subject,message,turnstileToken})
     });
-    let r=await post();
-    let d=await r.json().catch(()=>({}));
-    if(r.status===404&&/invalid user/i.test(String(d.error||""))){
-     /* The saved browser ID is unknown to the server (for example after a database reset). Register again once and retry. */
-     try{localStorage.removeItem(USER_KEY)}catch(e){}
-     userId=await ensureUser();r=await post();d=await r.json().catch(()=>({}));
-    }
+    const d=await r.json().catch(()=>({}));
     if(!r.ok||!d.success){
      const code=d.code?" ["+d.code+"]":" (HTTP "+r.status+")";
      const trace=d.requestId?" Reference: "+d.requestId:"";
      throw new Error((d.error||"The support request could not be sent.")+code+trace);
     }
     form.reset();status.textContent="Request sent. Ticket #"+d.ticketId+".";
-   }catch(err){status.textContent=(err instanceof TypeError)?"Couldn’t reach the support service. Check your connection and try again.":(err.message||"Could not send your request. Try again later.")}
+   }catch(err){status.textContent=err.message||"Could not send your request. Try again later."}
    finally{
     try{window.turnstile.reset(widgetId)}catch(e){}
     btn.disabled=false;
@@ -2674,11 +2631,9 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
  }
  async function sendError(message,type){
   try{
-   if(location.protocol==="file:")return;
    const body={message:String(message||"Unknown application error").slice(0,1500),type:String(type||"application").slice(0,80),page:location.pathname.slice(0,200)};
    const id=getUserId();if(id)body.userId=id;
-   const er=await fetch(API+"/api/errors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});
-   if(er.status===404&&body.userId){try{localStorage.removeItem(USER_KEY)}catch(e){}}
+   await fetch(API+"/api/errors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});
   }catch(e){/* Reporting must never interfere with the app. */}
  }
  let reportCount=0,lastReport=0;
@@ -2692,7 +2647,7 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
 /* Navigation shell: five primary destinations plus a grouped More menu. */
 (function(){
 const PRIMARY=[["home","Home","🏠"],["transfer","Transfer","🔀"],["mymusic","My Music","🎵"],["tools","Playlist Tools","🛠"],["more","More","•••"]];
-const EXTRA=[["sync","Sync playlists","🔄"],["insights","Insights","📊"],["history","Transfer history","🕘"],["backups","Backups","💾"],["support","Support","✉️"],["appearance","Appearance","🎨"],["settings","Settings","⚙️"]];
+const EXTRA=[["sync","Sync playlists","🔄"],["insights","Insights","📊"],["history","Transfer history","🕘"],["backups","Backups","💾"],["support","Support","✉️"],["appearance","Appearance","🎨"],["settings","Settings","⚙️"],["games","Mini games","🎮"]];
 const VALID=new Set([...PRIMARY.map(x=>x[0]),...EXTRA.map(x=>x[0])]);
 const g=id=>document.getElementById(id);let cur="home";
 const nav=document.createElement("nav");nav.id="sn";nav.setAttribute("aria-label","Main navigation");
@@ -2831,10 +2786,10 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  function show(v,focus){if(v==="appearance"){const more=g("sn-more");if(more)more.open=false;const f=g("fab");if(f)f.click();return}
   if(!VALID.has(v))v="home";cur=v;
   document.querySelectorAll("[data-views]").forEach(e=>{const l=e.dataset.views.split(" ");e.hidden=!l.includes(v)});
-  const primary=v==="sync"||v==="insights"||v==="history"||v==="backups"||v==="settings"?"more":v;
+  const primary=v==="sync"||v==="insights"||v==="history"||v==="backups"||v==="settings"||v==="games"?"more":v;
   nav.querySelectorAll("button[data-go]").forEach(b=>{if(b.dataset.go===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   const more=g("sn-more");if(more){more.classList.toggle("more-active",primary==="more");if(primary==="more")more.open=true;else more.open=false;}
-  if(v==="home")homeDraw();if(v==="mymusic")libDraw();if(v==="backups"||v==="settings")infoDraw();
+  if(v==="home")homeDraw();if(v==="games"&&window.PRGames)PRGames.draw();if(v==="mymusic")libDraw();if(v==="backups"||v==="settings")infoDraw();
   try{if(location.hash!=="#"+v)history.replaceState(null,"","#"+v)}catch(e){}
   if(focus){const h=document.querySelector('[data-views~="'+v+'"] h2');if(h){h.tabIndex=-1;h.focus({preventScroll:true})}}
   window.scrollTo(0,0)}
@@ -2846,13 +2801,341 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  window.PLXNAV={show,current:()=>cur};show((location.hash||"#home").slice(1));
 })();
 </script>
+<style>
+.gm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:10px 0}
+.gm-tile{border:1px solid var(--bd);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.gm-tile h3{margin:0;font-size:16px}
+.gm-tile p{margin:0;font-size:13px;color:var(--mu);flex:1}
+.gm-bar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 12px;font-size:14px}
+.gm-bar b{font-size:18px}
+.gm-q{font-size:20px;font-weight:700;margin:6px 0 2px;overflow-wrap:anywhere}
+.gm-opts{display:grid;gap:8px;margin:12px 0}
+.gm-opts button{text-align:left}
+.gm-opts button.right{background:var(--ok);color:var(--on)}
+.gm-opts button.wrong{background:transparent;color:var(--tx);border:2px solid var(--mu);text-decoration:line-through}
+.gm-vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.gm-vs>div{border:1px solid var(--bd);border-radius:12px;padding:12px;overflow-wrap:anywhere}
+.gm-vs b{display:block;font-size:26px}
+.gm-tapzone{width:min(220px,70vw);aspect-ratio:1;border-radius:50%;font-size:18px;font-weight:700;margin:12px auto;display:block;touch-action:manipulation}
+.gm-tapzone.beat{transform:scale(1.07);box-shadow:0 0 0 8px var(--ac2)}
+.gm-fb{min-height:22px;font-weight:600}
+@media (prefers-reduced-motion:no-preference){.gm-tapzone{transition:transform .08s,box-shadow .08s}}
+.gm-mem{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.gm-mem button{min-height:76px;padding:6px;font-size:13px;overflow-wrap:anywhere;text-align:center}
+.gm-mem button.dn{font-size:22px}.gm-mem button.up{background:var(--ac);color:var(--on)}.gm-mem button.ok{background:var(--ok);color:var(--on)}
+.gm-word{font:700 24px/1.6 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;margin:10px 0;overflow-wrap:anywhere}
+.gm-keys{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.gm-keys button{min-width:34px;padding:7px 8px}
+.gm-keys button.right{background:var(--ok);color:var(--on)}.gm-keys button.wrong{background:transparent;color:var(--mu);border:2px solid var(--mu)}
+.gm-cv{display:block;width:100%;max-width:360px;height:auto;margin:8px auto;border-radius:14px;border:1px solid var(--bd);background:var(--ac2);touch-action:none}
+.gm-pads{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin:12px auto}
+.gm-pad{aspect-ratio:1;font-size:26px;font-weight:800;color:#1b1b1f;border:3px solid transparent;border-radius:18px}
+.gm-pad.lit{filter:brightness(1.45);transform:scale(1.05);border-color:var(--tx)}
+.gm-ord{display:grid;gap:8px;margin:10px 0}.gm-ord button{text-align:left;display:flex;justify-content:space-between;gap:10px}
+.gm-ord button.ok{background:var(--ok);color:var(--on)}
+</style>
 <script>
-(()=>{const s=document.getElementById("stat");if(!s)return;let t=0;
-const clr=()=>{s.textContent=""};
-document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest("#sg,#rl,#go,#dp,#in,#ch,#nlb,#add,#demo,[data-go]");if(x)clr()},true);
-s.addEventListener("click",e=>{if(!e.target.closest("a,button"))clr()});
-s.title="Click to dismiss";
-new MutationObserver(()=>{clearTimeout(t);if(s.textContent)t=setTimeout(clr,20000)}).observe(s,{childList:true,characterData:true,subtree:true})})();
+/* Mini games: Whose Track?, Higher or Lower, Tap the Tempo. Uses the library (lib/aggregate) when it is big enough, otherwise a small sample list. Only localStorage key added: plremix:games (best scores). */
+(function(){
+const $=id=>document.getElementById(id);
+const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="plremix:games";let best={q:0,hl:0,tap:0,mem:0,hm:0,cat:0,dec:0,scr:0,sim:0,ord:0,ear:0,tv:0};
+try{const b=JSON.parse(localStorage.getItem(KEY)||"{}");for(const k in best)if(+b[k]>0)best[k]=+b[k]}catch(e){}
+const saveBest=()=>{try{localStorage.setItem(KEY,JSON.stringify(best))}catch(e){}};
+const SAMPLE=[["Billie Jean","Michael Jackson",1982],["Smells Like Teen Spirit","Nirvana",1991],["Uptown Funk","Mark Ronson",2014],["Rolling in the Deep","Adele",2010],["Blinding Lights","The Weeknd",2019],["Take On Me","a-ha",1985],["Bohemian Rhapsody","Queen",1975],["Hey Ya!","OutKast",2003],["Lose Yourself","Eminem",2002],["Seven Nation Army","The White Stripes",2003],["Shake It Off","Taylor Swift",2014],["Mr. Brightside","The Killers",2003]].map(x=>({t:x[0],a:x[1],yr:x[2]}));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const num=v=>(v==null||v===""||isNaN(+v))?null:+v;
+let S=null,timers=[],ac=null,pool=null;
+function getPool(){let L=[];try{L=aggregate().L.filter(o=>o.t&&o.a)}catch(e){}
+ const mine=L.length>=8&&new Set(L.map(o=>String(o.a).toLowerCase())).size>=4;return pool={L:mine?L:SAMPLE,mine}}
+function stop(){if(S&&S.g==="idle")idleSave();timers.forEach(clearTimeout);timers=[];if(S){S.dead=true;if(S.raf)cancelAnimationFrame(S.raf)}}
+const later=(fn,ms)=>{const t=setTimeout(fn,ms);timers.push(t)};
+const box=()=>$("gm-stage");
+const note=()=>pool&&!pool.mine?`<p class="hint">Playing with sample songs. Import a playlist (at least 8 tracks and 4 artists) and these games will use your own music.</p>`:"";
+function hub(){stop();S=null;const p=getPool();
+ $("gamesb").innerHTML=`<p class="hint" style="margin-top:0">Quick games built from your own library. Nothing here leaves your browser.</p>${note()}
+ <div class="gm-grid">
+ <div class="gm-tile"><h3>Whose track?</h3><p>Ten songs from your library. Pick the right artist for each. Best: <b>${best.q}</b>/10</p><button type="button" data-gm="q">Play</button></div>
+ <div class="gm-tile"><h3>Higher or lower</h3><p>Compare two tracks by year, BPM or play count. How long can you keep a streak? Best: <b>${best.hl}</b></p><button type="button" data-gm="hl">Play</button></div>
+ <div class="gm-tile"><h3>Tap the tempo</h3><p>Listen to a steady beat, then keep it going by tapping. Best: <b>${best.tap}</b>/100</p><button type="button" data-gm="tap">Play</button></div>
+ <div class="gm-tile"><h3>Memory match</h3><p>Flip cards to pair each song with its artist in as few moves as you can. Best: <b>${best.mem||"–"}</b> moves</p><button type="button" data-gm="mem">Play</button></div>
+ <div class="gm-tile"><h3>Song hangman</h3><p>Guess the song title letter by letter. The artist is your hint. Five songs, six misses each. Best: <b>${best.hm}</b>/5</p><button type="button" data-gm="hm">Play</button></div>
+ <div class="gm-tile"><h3>Catch the notes 🐱</h3><p>Steer a little cat under falling notes for 30 seconds. Grab 🎵 and ⭐, dodge the rain clouds. Best: <b>${best.cat}</b></p><button type="button" data-gm="cat">Play</button></div>
+ <div class="gm-tile"><h3>Decade dash</h3><p>Ten songs: which decade did each come out in? Best: <b>${best.dec}</b>/10</p><button type="button" data-gm="dec">Play</button></div>
+ <div class="gm-tile"><h3>Artist scramble</h3><p>The letters of an artist's name are shuffled. Unscramble five of them. Best: <b>${best.scr}</b>/10</p><button type="button" data-gm="scr">Play</button></div>
+ <div class="gm-tile"><h3>Echo pads</h3><p>Watch and listen to the pattern, then repeat it. It grows every round. Best: <b>${best.sim}</b> rounds</p><button type="button" data-gm="sim">Play</button></div>
+ <div class="gm-tile"><h3>Line them up</h3><p>Tap four tracks in order, like oldest to newest. Three lives. Best: <b>${best.ord}</b> rounds</p><button type="button" data-gm="ord">Play</button></div>
+ <div class="gm-tile"><h3>Sharp ears</h3><p>Two notes play. Is the second higher or lower? The gap shrinks as you improve. Best: <b>${best.ear}</b></p><button type="button" data-gm="ear">Play</button></div>
+ <div class="gm-tile"><h3>Beat factory 🥁</h3><p>An idle clicker: tap to make beats, hire bands, and keep earning while you play. Total made: <b>${fmt(idleLoad().tot)}</b></p><button type="button" data-gm="idle">Play</button></div>
+ <div class="gm-tile"><h3>History trivia</h3><p>${tvCount()} questions across 20 categories, ten per game. Best: <b>${best.tv}</b>/10</p><button type="button" data-gm="tv">Play</button></div>
+ </div><div id="gm-stage" aria-live="polite"></div>`;
+ /* stage only used once a game starts; hub hides tiles then */}
+function shell(title,bar,body){$("gamesb").innerHTML=`<div class="acts"><button type="button" class="sec sm" data-gm="hub">← All games</button></div><h3 style="margin:0 0 4px;font-size:17px">${title}</h3><div class="gm-bar">${bar}</div><div id="gm-stage" aria-live="polite">${body}</div>`}
+/* ---------- Whose track? ---------- */
+function qStart(){stop();const p=getPool();const L=shuf(p.L);S={g:"q",L,i:0,sc:0,st:0,n:Math.min(10,L.length),dead:false,used:new Set()};qRound()}
+function qRound(){const s=S,t=s.L[s.i],ar=String(t.a);
+ const others=[...new Set(shuf(s.L).map(o=>String(o.a)).filter(a=>a.toLowerCase()!==ar.toLowerCase()))].slice(0,3);
+ s.opts=shuf([ar,...others]);s.ans=ar;s.locked=false;
+ shell("Whose track?",`<span>Round <b>${s.i+1}</b>/${s.n}</span><span>Score <b>${s.sc}</b></span><span>Streak <b>${s.st}</b></span>`,
+ `<div class="gm-q">${E(t.t)}</div><div class="hint">Who is the artist?</div><div class="gm-opts">${s.opts.map((o,i)=>`<button type="button" class="sec" data-gm="qa" data-i="${i}">${E(o)}</button>`).join("")}</div><div class="gm-fb" id="gm-fb"></div>`)}
+function qAnswer(i){const s=S;if(!s||s.g!=="q"||s.locked)return;s.locked=true;const ok=s.opts[i]===s.ans;
+ if(ok){s.sc++;s.st++}else s.st=0;
+ document.querySelectorAll("[data-gm=qa]").forEach((b,j)=>{b.disabled=true;if(s.opts[j]===s.ans)b.classList.add("right");else if(j===i)b.classList.add("wrong")});
+ const last=s.i+1>=s.n;$("gm-fb").innerHTML=(ok?"Correct. ":"It was "+E(s.ans)+". ")+`<button type="button" class="sm" data-gm="${last?"qend":"qnext"}">${last?"See result":"Next"}</button>`;
+ const nb=document.querySelector("#gm-fb button");if(nb)nb.focus()}
+function qEnd(){const s=S,nb=s.sc>best.q;if(nb){best.q=s.sc;saveBest()}
+ shell("Whose track?",`<span>Final score <b>${s.sc}</b>/${s.n}</span>`,`<p>${nb?"New best! ":""}${s.sc>=s.n*.8?"You know your library well.":s.sc>=s.n*.5?"Not bad. Some of these deserve another listen.":"Time to revisit your playlists."}</p><div class="acts"><button type="button" data-gm="q">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)}
+/* ---------- Higher or lower ---------- */
+const METRICS=[["yr","release year",v=>String(Math.round(v)),"released later"],["tempo","BPM",v=>Math.round(v)+" BPM","faster"],["plays","play count",v=>Math.round(v)+" plays","played more"]];
+function hlStart(){stop();const p=getPool();let m=null,L=[];
+ for(const x of shuf(METRICS)){const l=p.L.filter(o=>num(o[x[0]])!=null&&(x[0]!=="yr"||num(o[x[0]])>1000));if(new Set(l.map(o=>+o[x[0]])).size>=6){m=x;L=l;break}}
+ if(!m){shell("Higher or lower","",`<p>Your library needs at least 6 tracks with different release years, BPMs or play counts for this game. Importing metadata or running the online lookup can fill these in.</p><button type="button" class="sec" data-gm="hub">All games</button>`);return}
+ S={g:"hl",m,L:shuf(L),k:1,streak:0,dead:false};S.cur=S.L[0];hlRound()}
+function hlRound(){const s=S,v=o=>+o[s.m[0]];let nx,tries=0;
+ do{nx=s.L[s.k++%s.L.length];tries++}while((nx===s.cur||v(nx)===v(s.cur))&&tries<s.L.length*2);
+ s.nx=nx;s.locked=false;
+ shell("Higher or lower",`<span>Streak <b>${s.streak}</b></span><span>Best <b>${best.hl}</b></span>`,
+ `<div class="gm-vs"><div><span class="hint">Known</span><div>${E(s.cur.t)}<br><span class="hint">${E(s.cur.a)}</span></div><b>${E(s.m[2](v(s.cur)))}</b></div><div><span class="hint">Guess</span><div>${E(nx.t)}<br><span class="hint">${E(nx.a)}</span></div><b id="gm-hid">?</b></div></div>
+ <div>Is the second track's ${E(s.m[1])} higher or lower? <span class="hint">(higher = ${E(s.m[3])})</span></div><div class="acts" style="margin-top:10px"><button type="button" data-gm="hlg" data-d="1">Higher</button><button type="button" data-gm="hlg" data-d="-1">Lower</button></div><div class="gm-fb" id="gm-fb"></div>`)}
+function hlGuess(d){const s=S;if(!s||s.g!=="hl"||s.locked)return;s.locked=true;const v=o=>+o[s.m[0]];
+ const ok=(v(s.nx)>v(s.cur)?1:-1)===d;$("gm-hid").textContent=s.m[2](v(s.nx));
+ document.querySelectorAll("[data-gm=hlg]").forEach(b=>b.disabled=true);
+ if(ok){s.streak++;if(s.streak>best.hl){best.hl=s.streak;saveBest()}$("gm-fb").innerHTML=`Right. <button type="button" class="sm" data-gm="hln">Next</button>`;const b=document.querySelector("#gm-fb button");if(b)b.focus()}
+ else{$("gm-fb").innerHTML=`Wrong. Final streak: <b>${s.streak}</b>. <button type="button" class="sm" data-gm="hl">Play again</button> <button type="button" class="sm sec" data-gm="hub">All games</button>`}}
+function hlNext(){S.cur=S.nx;hlRound()}
+/* ---------- Tap the tempo ---------- */
+const BEATS=8;
+function tapStart(){stop();const bpm=60+Math.round(Math.random()*100),iv=60000/bpm;
+ S={g:"tap",bpm,iv,phase:"ready",taps:[],dead:false};tapDraw()}
+function tapDraw(){const s=S,snd=s.snd!==false;
+ const body=s.phase==="ready"?`<p>You'll hear ${BEATS} clicks at a steady tempo (the button also pulses, so it works with sound off). Then keep the same tempo by tapping the button, or press Space, ${BEATS} times.</p><label style="display:flex;gap:6px;align-items:center;margin:8px 0"><input type="checkbox" id="gm-snd"${snd?" checked":""}> Play click sound</label><button type="button" data-gm="tapgo">Start</button>`
+ :`<button type="button" class="gm-tapzone" id="gm-tz" data-gm="none" aria-label="Tap the tempo">${s.phase==="listen"?"Listen…":"Tap!"}</button><div class="gm-fb" id="gm-fb">${s.phase==="listen"?"Count the beat.":"Tapped "+s.taps.length+"/"+BEATS}</div>`;
+ shell("Tap the tempo",`<span>Best <b>${best.tap}</b>/100</span>`,body);
+ const tz=$("gm-tz");if(tz){tz.addEventListener("pointerdown",e=>{e.preventDefault();tapHit()});tz.addEventListener("click",e=>e.preventDefault());if(s.phase==="tap")tz.focus()}}
+function tapGo(){const s=S,c=$("gm-snd");s.snd=c?c.checked:true;s.phase="listen";tapDraw();
+ if(s.snd){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){ac=null}}
+ const t0=ac&&s.snd?ac.currentTime+.15:0;
+ for(let k=0;k<BEATS;k++){
+  if(ac&&s.snd){const o=ac.createOscillator(),g=ac.createGain(),t=t0+k*s.iv/1000;o.frequency.value=k%4===0?1200:800;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.06);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+.08)}
+  later(()=>{const z=$("gm-tz");if(z){z.classList.add("beat");later(()=>z.classList.remove("beat"),90)}},150+k*s.iv)}
+ later(()=>{if(S!==s||s.dead)return;s.phase="tap";s.taps=[];tapDraw()},150+BEATS*s.iv+80)}
+function tapHit(){const s=S;if(!s||s.g!=="tap"||s.phase!=="tap")return;const now=performance.now(),l=s.taps[s.taps.length-1];
+ if(l!=null&&now-l>3000)s.taps=[];s.taps.push(now);const z=$("gm-tz");if(z){z.classList.add("beat");later(()=>z.classList.remove("beat"),90)}
+ const fb=$("gm-fb");if(fb)fb.textContent="Tapped "+s.taps.length+"/"+BEATS;if(s.taps.length>=BEATS)tapEnd()}
+function tapEnd(){const s=S;s.phase="done";const d=[];for(let i=1;i<s.taps.length;i++)d.push(s.taps[i]-s.taps[i-1]);
+ const mean=d.reduce((a,b)=>a+b,0)/d.length,sd=Math.sqrt(d.reduce((a,b)=>a+(b-mean)**2,0)/d.length),got=60000/mean;
+ const err=Math.abs(got-s.bpm)/s.bpm*100,jit=sd/mean*100,score=Math.max(0,Math.round(100-err*4-jit*2)),nb=score>best.tap;if(nb){best.tap=score;saveBest()}
+ shell("Tap the tempo",`<span>Score <b>${score}</b>/100</span>`,`<p>${nb?"New best! ":""}Target <b>${s.bpm} BPM</b>. You tapped <b>${got.toFixed(1)} BPM</b> (${err.toFixed(1)}% off, ${jit.toFixed(1)}% unsteadiness).</p><div class="acts"><button type="button" data-gm="tap">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)}
+/* ---------- Memory match ---------- */
+function memStart(){stop();const p=getPool(),seen=new Set(),pairs=[];
+ for(const o of shuf(p.L)){const a="a"+String(o.a).toLowerCase(),t="t"+String(o.t).toLowerCase();if(seen.has(a)||seen.has(t))continue;seen.add(a);seen.add(t);pairs.push(o);if(pairs.length===6)break}
+ if(pairs.length<4){shell("Memory match","",`<p>This game needs at least 4 tracks by different artists.</p><button type="button" class="sec" data-gm="hub">All games</button>`);return}
+ S={g:"mem",cards:shuf(pairs.flatMap((o,i)=>[{p:i,x:String(o.t),k:"song"},{p:i,x:String(o.a),k:"artist"}])),open:[],done:new Set(),moves:0,lock:false,dead:false};
+ shell("Memory match",`<span>Moves <b id="gm-mv">0</b></span><span>Pairs <b id="gm-pr">0</b>/${pairs.length}</span><span>Best <b>${best.mem||"–"}</b></span>`,
+ `<div class="gm-mem">${S.cards.map((c,i)=>`<button type="button" class="sec dn" data-gm="memc" data-i="${i}" aria-label="Card ${i+1}, face down">♪</button>`).join("")}</div><div class="gm-fb" id="gm-fb">Match each song with its artist.</div>`);}
+function memPaint(){const s=S;document.querySelectorAll("[data-gm=memc]").forEach((b,i)=>{const c=s.cards[i],ok=s.done.has(i),up=ok||s.open.includes(i);
+ b.className=ok?"ok":up?"up":"sec dn";b.textContent=up?c.x:"♪";b.setAttribute("aria-label",up?(c.k==="song"?"Song: ":"Artist: ")+c.x:"Card "+(i+1)+", face down")});
+ $("gm-mv").textContent=s.moves;$("gm-pr").textContent=s.done.size/2}
+function memFlip(i){const s=S;if(!s||s.g!=="mem"||s.lock||s.done.has(i)||s.open.includes(i))return;s.open.push(i);
+ if(s.open.length===2){s.moves++;const[a,b]=s.open;
+  if(s.cards[a].p===s.cards[b].p){s.done.add(a);s.done.add(b);s.open=[];memPaint();if(s.done.size===s.cards.length)memWin();return}
+  s.lock=true;memPaint();later(()=>{if(S!==s)return;s.open=[];s.lock=false;memPaint()},950);return}
+ memPaint()}
+function memWin(){const s=S,nb=!best.mem||s.moves<best.mem;if(nb){best.mem=s.moves;saveBest()}
+ const n=s.cards.length/2;$("gm-fb").innerHTML=`${nb?"New best! ":""}All ${n} pairs in <b>${s.moves}</b> moves (perfect is ${n}). <button type="button" class="sm" data-gm="mem">Play again</button> <button type="button" class="sm sec" data-gm="hub">All games</button>`}
+/* ---------- Song hangman ---------- */
+const base=c=>c.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase(),isL=c=>/^[A-Z]$/.test(base(c));
+function hmStart(){stop();const p=getPool();let L=shuf(p.L).filter(o=>{const t=String(o.t);return t.length<=28&&[...t].filter(isL).length>=3});if(!L.length)L=shuf(p.L);
+ S={g:"hm",L,i:0,sc:0,n:Math.min(5,L.length),dead:false};hmRound()}
+function hmRound(){const s=S,o=s.L[s.i];s.w=String(o.t);s.art=String(o.a);s.gs=new Set();s.miss=0;s.locked=false;
+ const keys="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(k=>`<button type="button" class="sec sm" data-gm="hmk" data-k="${k}">${k}</button>`).join("");
+ shell("Song hangman",`<span>Song <b>${s.i+1}</b>/${s.n}</span><span>Solved <b>${s.sc}</b></span><span id="gm-lv"></span>`,
+ `<div class="hint">Artist: ${E(s.art)}</div><div class="gm-word" id="gm-word" aria-live="polite"></div><div class="gm-keys">${keys}</div><div class="gm-fb" id="gm-fb"></div>`);hmPaint()}
+const hmWon=s=>[...s.w].every(c=>!isL(c)||s.gs.has(base(c)));
+function hmPaint(){const s=S,show=s.locked;
+ $("gm-word").innerHTML=[...s.w].map(c=>c===" "?"&nbsp;&nbsp;":(!isL(c)||s.gs.has(base(c))||show)?E(c):"_").join(" ");
+ $("gm-word").setAttribute("aria-label",[...s.w].map(c=>c===" "?"space":(!isL(c)||s.gs.has(base(c))||show)?c:"blank").join(" "));
+ $("gm-lv").innerHTML="Misses left <b>"+(6-s.miss)+"</b>";
+ document.querySelectorAll("[data-gm=hmk]").forEach(b=>{const k=b.dataset.k;b.disabled=s.locked||s.gs.has(k);b.className="sec sm"+(s.gs.has(k)?([...s.w].some(c=>base(c)===k)?" right":" wrong"):"")})}
+function hmGuess(k){const s=S;if(!s||s.g!=="hm"||s.locked||s.gs.has(k))return;s.gs.add(k);if(![...s.w].some(c=>base(c)===k))s.miss++;
+ const won=hmWon(s),lost=s.miss>=6;
+ if(won||lost){s.locked=true;if(won)s.sc++;hmPaint();const last=s.i+1>=s.n;
+  $("gm-fb").innerHTML=(won?"Got it. ":"Out of misses. ")+`<button type="button" class="sm" data-gm="${last?"hmend":"hmnext"}">${last?"See result":"Next song"}</button>`;const b=document.querySelector("#gm-fb button");if(b)b.focus();return}
+ hmPaint()}
+function hmEnd(){const s=S,nb=s.sc>best.hm;if(nb){best.hm=s.sc;saveBest()}
+ shell("Song hangman",`<span>Solved <b>${s.sc}</b>/${s.n}</span>`,`<p>${nb?"New best! ":""}${s.sc===s.n?"Perfect round.":s.sc>=3?"Solid.":"Tough set. Try again."}</p><div class="acts"><button type="button" data-gm="hm">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)}
+/* ---------- Catch the notes ---------- */
+const PTS=[1,1,3,-2],FALL=["🎵","🎶","⭐","🌧️"];
+function catStart(){stop();const p=getPool(),tr=p.L[Math.random()*p.L.length|0];
+ S={g:"cat",dead:false,run:false,sc:0,left:30,x:.5,kl:0,items:[],pops:[],mood:"🐱",moodT:0,last:0,spawn:.3,tr};
+ shell("Catch the notes",`<span>Score <b id="gm-sc">0</b></span><span>Time <b id="gm-tm">30</b>s</span><span>Best <b>${best.cat}</b></span>`,
+ `<div class="hint">Now playing: ${E(tr.t)} · ${E(tr.a)}</div><canvas id="gm-cv" class="gm-cv" aria-label="Game area: a cat catching falling music notes"></canvas><p class="hint">Drag or move over the game area, or use ← → keys, to steer. Catch 🎵 🎶 ⭐ and dodge 🌧️.</p><div class="acts"><button type="button" data-gm="cats" id="gm-go">Start</button></div>`);
+ const cv=$("gm-cv"),d=Math.min(2,window.devicePixelRatio||1);cv.width=360*d;cv.height=420*d;S.cx=cv.getContext("2d");if(S.cx)S.cx.scale(d,d);
+ const mv=e=>{const r=cv.getBoundingClientRect();if(r.width)S.x=Math.max(.06,Math.min(.94,(e.clientX-r.left)/r.width))};
+ cv.addEventListener("pointermove",mv);cv.addEventListener("pointerdown",mv);catDraw()}
+function catGo(){const s=S;if(!s||s.g!=="cat"||s.run)return;s.run=true;s.last=0;$("gm-go").disabled=true;s.raf=requestAnimationFrame(catLoop)}
+function catDraw(){const s=S,c=s.cx;if(!c)return;c.clearRect(0,0,360,420);c.textAlign="center";c.textBaseline="middle";
+ c.font="26px serif";for(const it of s.items)c.fillText(FALL[it.k],it.x*360,it.y);
+ c.font="40px serif";c.fillText(s.moodT>0?s.mood:"🐱",s.x*360,380);
+ c.font="bold 16px system-ui,sans-serif";c.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--tx")||"#222";
+ for(const q of s.pops){c.globalAlpha=Math.max(0,q.t/.6);c.fillText(q.s,q.x*360,q.y);c.globalAlpha=1}}
+function catLoop(ts){const s=S;if(!s||s.dead||s.g!=="cat")return;if(!s.last)s.last=ts;const dt=Math.min(.05,(ts-s.last)/1000);s.last=ts;
+ s.left-=dt;s.spawn-=dt;s.moodT-=dt;if(s.kl)s.x=Math.max(.06,Math.min(.94,s.x+s.kl*dt*.9));
+ if(s.spawn<=0){s.spawn=.42+Math.random()*.35;const r=Math.random();s.items.push({k:r<.55?0:r<.75?1:r<.85?2:3,x:.08+Math.random()*.84,y:-16,v:110+Math.random()*70+(30-s.left)*3})}
+ s.items=s.items.filter(it=>{it.y+=it.v*dt;if(it.y>350&&it.y<405&&Math.abs(it.x-s.x)<.1){const v=PTS[it.k];s.sc=Math.max(0,s.sc+v);s.mood=v>0?"😺":"😿";s.moodT=.4;s.pops.push({s:v>0?"+"+v:String(v),x:it.x,y:340,t:.6});return false}return it.y<440});
+ s.pops=s.pops.filter(q=>{q.t-=dt;q.y-=30*dt;return q.t>0});
+ $("gm-sc").textContent=s.sc;$("gm-tm").textContent=Math.max(0,Math.ceil(s.left));catDraw();
+ if(s.left<=0)return catEnd();s.raf=requestAnimationFrame(catLoop)}
+function catEnd(){const s=S,nb=s.sc>best.cat;if(nb){best.cat=s.sc;saveBest()}
+ shell("Catch the notes",`<span>Score <b>${s.sc}</b></span>`,`<p>${nb?"New best! ":""}${s.sc>=40?"Purrfect catching.":s.sc>=20?"Nice paws!":"The cat enjoyed it anyway."}</p><div class="acts"><button type="button" data-gm="cat">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)}
+document.addEventListener("keydown",e=>{const s=S;if(!s||s.g!=="cat"||!s.run||s.dead)return;if(e.code==="ArrowLeft"||e.code==="ArrowRight"){e.preventDefault();s.kl=e.code==="ArrowLeft"?-1:1}});
+document.addEventListener("keyup",e=>{const s=S;if(s&&s.g==="cat"&&(e.code==="ArrowLeft"||e.code==="ArrowRight"))s.kl=0});
+/* ---------- shared helpers for the next five games ---------- */
+function need(title,msg){shell(title,"",`<p>This game needs ${msg}. Importing more metadata (or running the online lookup) can fill these in.</p><button type="button" class="sec" data-gm="hub">All games</button>`)}
+function audio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume();return ac}catch(e){return null}}
+function tone(f,d,at){const c=audio();if(!c)return;const t=at!=null?at:c.currentTime,o=c.createOscillator(),g=c.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(c.destination);o.start(t);o.stop(t+d+.05)}
+function pickMetric(p,min){for(const x of shuf(METRICS)){const l=p.L.filter(o=>num(o[x[0]])!=null&&(x[0]!=="yr"||num(o[x[0]])>1000));if(new Set(l.map(o=>+o[x[0]])).size>=min)return{m:x,L:l}}return null}
+const focusFb=()=>{const b=document.querySelector("#gm-fb button");if(b)b.focus()};
+/* generic multiple-choice engine (Decade dash) */
+function mcStart(key,title,items){stop();S={g:"mc",key,title,items,i:0,sc:0,dead:false};mcRound()}
+function mcRound(){const s=S,it=s.items[s.i];s.locked=false;
+ shell(s.title,`<span>Round <b>${s.i+1}</b>/${s.items.length}</span><span>Score <b>${s.sc}</b></span><span>Best <b>${best[s.key]}</b></span>`,
+ `<div class="gm-q">${E(it.q)}</div><div class="hint">${E(it.sub)}</div><div class="gm-opts">${it.opts.map((o,i)=>`<button type="button" class="sec" data-gm="mca" data-i="${i}">${E(o)}</button>`).join("")}</div><div class="gm-fb" id="gm-fb"></div>`)}
+function mcAnswer(i){const s=S;if(!s||s.g!=="mc"||s.locked)return;s.locked=true;const it=s.items[s.i],ok=it.opts[i]===it.ans;if(ok)s.sc++;
+ document.querySelectorAll("[data-gm=mca]").forEach((b,j)=>{b.disabled=true;if(it.opts[j]===it.ans)b.classList.add("right");else if(j===i)b.classList.add("wrong")});
+ const last=s.i+1>=s.items.length;$("gm-fb").innerHTML=(ok?"Correct. ":"It was "+E(it.ans)+". ")+`<button type="button" class="sm" data-gm="${last?"mcend":"mcnext"}">${last?"See result":"Next"}</button>`;focusFb()}
+function mcEnd(){const s=S,nb=s.sc>best[s.key];if(nb){best[s.key]=s.sc;saveBest()}
+ shell(s.title,`<span>Score <b>${s.sc}</b>/${s.items.length}</span>`,`<p>${nb?"New best! ":""}${s.sc>=8?"Impressive ears.":s.sc>=5?"Pretty good.":"Plenty of room to improve."}</p><div class="acts"><button type="button" data-gm="${s.key}">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)}
+/* ---------- Decade dash ---------- */
+function decStart(){const L=shuf(getPool().L.filter(o=>{const y=num(o.yr);return y&&y>1900&&y<2100}));
+ if(L.length<4){need("Decade dash","at least 4 tracks with a release year");return}
+ const all=[1950,1960,1970,1980,1990,2000,2010,2020];
+ mcStart("dec","Decade dash",L.slice(0,10).map(o=>{const d=Math.floor(+o.yr/10)*10,opts=[d,...shuf(all.filter(x=>x!==d)).slice(0,3)].sort((a,b)=>a-b).map(x=>x+"s");return{q:String(o.t),sub:"by "+o.a+". Which decade did it come out in?",opts,ans:d+"s"}}))}
+/* ---------- Artist scramble ---------- */
+const nz=t=>base(String(t)).replace(/[^A-Z0-9]/g,"");
+const scram=w=>{let r=w;for(let k=0;k<8&&r===w;k++)r=shuf([...w]).join("");return r};
+function scrStart(){stop();const L=shuf(getPool().L).filter(o=>{const a=String(o.a);return a.length<=24&&[...a].filter(isL).length>=4});
+ if(L.length<3){need("Artist scramble","at least 3 tracks with artist names of 4 or more letters");return}
+ S={g:"scr",L,i:0,sc:0,n:Math.min(5,L.length),dead:false};scrRound()}
+function scrRound(){const s=S,o=s.L[s.i];s.art=String(o.a);s.hint=false;s.locked=false;
+ s.txt=s.art.split(" ").map(w=>[...w].filter(isL).length>2?scram(w):w).join(" ").toUpperCase();
+ shell("Artist scramble",`<span>Round <b>${s.i+1}</b>/${s.n}</span><span>Score <b>${s.sc}</b></span><span>Best <b>${best.scr}</b></span>`,
+ `<div class="hint">From the song: ${E(o.t)}</div><div class="gm-word" aria-label="Scrambled letters: ${E(s.txt)}">${E(s.txt)}</div><div id="gm-h" class="hint"></div>
+ <div class="acts"><input id="gm-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your answer" style="width:min(320px,100%)"><button type="button" data-gm="scrchk">Check</button><button type="button" class="sec" data-gm="scrhint">Hint</button><button type="button" class="sec" data-gm="scrskip">Skip</button></div><div class="gm-fb" id="gm-fb"></div>`);const i=$("gm-in");if(i)i.focus()}
+function scrDone(pts,msg){const s=S;s.locked=true;s.sc+=pts;const last=s.i+1>=s.n;
+ $("gm-fb").innerHTML=msg+` <button type="button" class="sm" data-gm="${last?"scrend":"scrnext"}">${last?"See result":"Next"}</button>`;focusFb()}
+function scrCheck(){const s=S;if(!s||s.g!=="scr"||s.locked)return;const v=nz($("gm-in").value);if(!v){$("gm-fb").textContent="Type your guess first.";return}
+ if(v===nz(s.art))scrDone(s.hint?1:2,`Yes! It's ${E(s.art)} (+${s.hint?1:2}).`);else $("gm-fb").textContent="Not quite. Try again."}
+function scrHint(){const s=S;if(!s||s.g!=="scr"||s.locked)return;s.hint=true;$("gm-h").textContent="Starts with: "+s.art.split(" ").map(w=>w[0]).join(" · ")+" (this answer is now worth 1 point)"}
+function scrEnd(){const s=S,nb=s.sc>best.scr;if(nb){best.scr=s.sc;saveBest()}
+ shell("Artist scramble",`<span>Score <b>${s.sc}</b>/${s.n*2}</span>`,`<p>${nb?"New best! ":""}Two points per name, one with a hint.</p><div class="acts"><button type="button" data-gm="scr">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)}
+/* ---------- Echo pads ---------- */
+const PADS=[["#e0565b",262],["#e8b23a",330],["#4aa56e",392],["#4f7fd6",523]];
+function simStart(){stop();S={g:"sim",seq:[],pos:0,phase:"idle",dead:false};
+ shell("Echo pads",`<span>Round <b id="gm-rd">0</b></span><span>Best <b>${best.sim}</b></span>`,`<p class="hint">Watch and listen, then repeat the pattern by tapping the pads or pressing 1 to 4. It works silently too, since each pad lights up.</p><div class="gm-pads">${PADS.map((p,i)=>`<button type="button" class="gm-pad" data-gm="simp" data-i="${i}" style="background:${p[0]}" aria-label="Pad ${i+1}">${i+1}</button>`).join("")}</div><div class="gm-fb" id="gm-fb">Press Start.</div><div class="acts"><button type="button" data-gm="simgo" id="gm-go">Start</button></div>`)}
+function simGo(){const s=S;if(!s||s.g!=="sim"||s.phase!=="idle")return;audio();simAdd()}
+function simAdd(){const s=S,gap=Math.max(330,640-s.seq.length*22);s.seq.push(Math.random()*4|0);s.pos=0;s.phase="show";$("gm-go").disabled=true;$("gm-rd").textContent=s.seq.length;$("gm-fb").textContent="Watch…";
+ s.seq.forEach((p,k)=>later(()=>simFlash(p),600+k*gap));
+ later(()=>{if(S!==s||s.dead)return;s.phase="in";$("gm-fb").textContent="Your turn."},600+s.seq.length*gap)}
+function simFlash(i){const b=document.querySelectorAll("[data-gm=simp]")[i];if(!b)return;b.classList.add("lit");tone(PADS[i][1],.28);later(()=>b.classList.remove("lit"),230)}
+function simPress(i){const s=S;if(!s||s.g!=="sim"||s.phase!=="in")return;simFlash(i);
+ if(i!==s.seq[s.pos]){s.phase="over";const sc=s.seq.length-1,nb=sc>best.sim;if(nb){best.sim=sc;saveBest()}
+  $("gm-fb").innerHTML=`Missed. You completed <b>${sc}</b> round${sc===1?"":"s"}${nb?" (new best!)":""}. <button type="button" class="sm" data-gm="sim">Play again</button> <button type="button" class="sm sec" data-gm="hub">All games</button>`;return}
+ if(++s.pos>=s.seq.length){s.phase="wait";$("gm-fb").textContent="Nice!";later(()=>{if(S===s&&!s.dead)simAdd()},800)}}
+/* ---------- Line them up ---------- */
+const DIRS={yr:"oldest first",tempo:"slowest first",plays:"fewest plays first"};
+function ordStart(){stop();const pm=pickMetric(getPool(),4);if(!pm){need("Line them up","at least 4 tracks with different release years, BPMs or play counts");return}
+ S={g:"ord",pm,lives:3,rd:0,dead:false};ordRound()}
+function ordRound(){const s=S,k=s.pm.m[0],seen=new Set(),pick=[];
+ for(const o of shuf(s.pm.L)){const v=+o[k];if(seen.has(v))continue;seen.add(v);pick.push(o);if(pick.length===4)break}
+ s.items=pick;s.sorted=[...pick].sort((a,b)=>a[k]-b[k]);s.done=0;s.locked=false;
+ shell("Line them up",`<span>Rounds <b id="gm-rd">${s.rd}</b></span><span id="gm-lv"></span><span>Best <b>${best.ord}</b></span>`,
+ `<p>Tap the tracks in order, ${E(DIRS[k])}, by ${E(s.pm.m[1])}.</p><div class="gm-ord">${pick.map((o,i)=>`<button type="button" class="sec" data-gm="ordt" data-i="${i}"><span>${E(o.t)} <span class="hint">· ${E(o.a)}</span></span><b></b></button>`).join("")}</div><div class="gm-fb" id="gm-fb"></div>`);ordPaint()}
+function ordPaint(){const s=S;$("gm-lv").innerHTML="Lives <b>"+"♥".repeat(s.lives)+"</b>";$("gm-rd").textContent=s.rd}
+function ordTap(i){const s=S;if(!s||s.g!=="ord"||s.locked)return;const o=s.items[i],b=document.querySelectorAll("[data-gm=ordt]")[i];if(b.classList.contains("ok"))return;
+ if(o===s.sorted[s.done]){s.done++;b.classList.add("ok");b.querySelector("b").textContent=s.done+" · "+s.pm.m[2](+o[s.pm.m[0]]);
+  if(s.done>=4){s.rd++;s.locked=true;if(s.rd>best.ord){best.ord=s.rd;saveBest()}ordPaint();$("gm-fb").textContent="Perfect order!";later(()=>{if(S===s)ordRound()},900)}return}
+ s.lives--;ordPaint();if(s.lives<=0){s.locked=true;$("gm-fb").innerHTML=`Out of lives after <b>${s.rd}</b> round${s.rd===1?"":"s"}. <button type="button" class="sm" data-gm="ord">Play again</button> <button type="button" class="sm sec" data-gm="hub">All games</button>`;return}
+ $("gm-fb").textContent="Not that one yet. Something comes before it."}
+/* ---------- Sharp ears ---------- */
+function earStart(){stop();if(!audio()){shell("Sharp ears","",`<p>This game needs sound, and your browser couldn't start audio.</p><button type="button" class="sec" data-gm="hub">All games</button>`);return}
+ S={g:"ear",lives:3,sc:0,gap:.12,dead:false};earRound()}
+function earRound(){const s=S,f=220*Math.pow(2,Math.random()*1.5);s.up=Math.random()<.5;s.f1=f;s.f2=s.up?f*(1+s.gap):f/(1+s.gap);s.answered=false;
+ shell("Sharp ears",`<span>Score <b>${s.sc}</b></span><span>Lives <b>${"♥".repeat(s.lives)}</b></span><span>Gap <b>${(s.gap*100).toFixed(1)}%</b></span><span>Best <b>${best.ear}</b></span>`,
+ `<p>Two notes will play. Is the second one higher or lower than the first?</p><div class="acts"><button type="button" data-gm="eara" data-d="1">Higher</button><button type="button" data-gm="eara" data-d="-1">Lower</button><button type="button" class="sec" data-gm="earr">Replay</button></div><div class="gm-fb" id="gm-fb"></div>`);earPlay()}
+function earPlay(){const s=S,c=audio();if(!c)return;const bs=document.querySelectorAll("#gm-stage button");bs.forEach(b=>b.disabled=true);$("gm-fb").textContent="Listen…";
+ const t=c.currentTime+.1;tone(s.f1,.5,t);tone(s.f2,.5,t+.8);
+ later(()=>{if(S!==s||s.dead||s.answered)return;bs.forEach(b=>b.disabled=false);$("gm-fb").textContent="Higher or lower?"},1500)}
+function earAnswer(d){const s=S;if(!s||s.g!=="ear"||s.answered)return;s.answered=true;const ok=(d===1)===s.up;
+ document.querySelectorAll("#gm-stage button").forEach(b=>b.disabled=true);
+ if(ok){s.sc++;s.gap=Math.max(.015,s.gap*.88)}else{s.lives--;s.gap=Math.min(.2,s.gap*1.15)}
+ $("gm-fb").textContent=(ok?"Correct. ":"Not quite. ")+"The second note was "+(s.up?"higher":"lower")+".";
+ if(s.lives<=0){later(()=>{if(S!==s)return;const nb=s.sc>best.ear;if(nb){best.ear=s.sc;saveBest()}
+  shell("Sharp ears",`<span>Score <b>${s.sc}</b></span>`,`<p>${nb?"New best! ":""}You got ${s.sc} right. Smallest gap reached: ${(s.gap*100).toFixed(1)}%.</p><div class="acts"><button type="button" data-gm="ear">Play again</button><button type="button" class="sec" data-gm="hub">All games</button></div>`)},1100);return}
+ later(()=>{if(S===s)earRound()},1100)}
+document.addEventListener("keydown",e=>{const v=$("v-games");if(!v||v.hidden||!S||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
+ if(S.g==="scr"&&e.key==="Enter"&&e.target&&e.target.id==="gm-in"){e.preventDefault();scrCheck()}
+ else if(S.g==="sim"&&/^[1-4]$/.test(e.key)&&!(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)))simPress(+e.key-1)});
+/* ---------- Beat factory (idle clicker) ---------- */
+const GEN=[["Metronome",15,.1],["Street busker",100,1],["Garage band",1100,8],["DJ booth",12e3,47],["Recording studio",13e4,260],["Stadium tour",14e5,1400]],IDK="plremix:idle";
+function fmt(n){if(n<1e3)return n<10?n.toFixed(1).replace(/\.0$/,""):String(Math.floor(n));const u=["K","M","B","T","Qa"];let i=-1;while(n>=1e3&&i<u.length-1){n/=1e3;i++}return n.toFixed(n<10?2:1)+u[i]}
+function idleLoad(){let d={};try{d=JSON.parse(localStorage.getItem(IDK)||"{}")}catch(e){}const g=Array.isArray(d.g)?d.g:[];return{n:+d.n||0,tot:+d.tot||0,cl:+d.cl||0,g:GEN.map((_,i)=>Math.max(0,Math.floor(+g[i])||0)),t:+d.t||Date.now()}}
+function idleSave(){const s=S&&S.s;if(!s)return;s.t=Date.now();try{localStorage.setItem(IDK,JSON.stringify(s))}catch(e){}}
+const idleRate=s=>GEN.reduce((a,g,i)=>a+g[2]*s.g[i],0),gCost=(s,i)=>Math.ceil(GEN[i][1]*Math.pow(1.15,s.g[i])),clVal=s=>Math.pow(2,s.cl),upCost=s=>Math.ceil(50*Math.pow(4,s.cl));
+function idleStart(){stop();const s=idleLoad(),away=Math.min((Date.now()-s.t)/1000,28800),gain=idleRate(s)*away*.5;s.n+=gain;s.tot+=gain;
+ S={g:"idle",s,dead:false,last:Date.now(),sv:0};
+ shell("Beat factory",`<span>Beats <b id="gm-n"></b></span><span><b id="gm-ps"></b> per second</span>`,`<p class="hint" id="gm-off">${gain>=1?"While you were away your bands made "+fmt(gain)+" beats (at half speed, up to 8 hours).":"Tap the drum, then hire help. Progress is saved in this browser."}</p><button type="button" class="gm-tapzone" data-gm="idletap" id="gm-drum" aria-label="Make a beat">🥁 +<span id="gm-cv2"></span></button><div class="gm-ord" id="gm-shop"></div><div class="acts"><button type="button" class="sm sec" data-gm="idlereset">Reset progress</button></div>`);idlePanel();idleTick()}
+function idlePanel(){const s=S.s;$("gm-shop").innerHTML=`<button type="button" class="sec" data-gm="idleu"><span>Better drum pad <span class="hint">· tap value ×2 (now ${fmt(clVal(s))})</span></span><b>${fmt(upCost(s))}</b></button>`+GEN.map((g,i)=>`<button type="button" class="sec" data-gm="idleb" data-i="${i}"><span>${g[0]} <span class="hint">· +${fmt(g[2])}/s · owned ${s.g[i]}</span></span><b>${fmt(gCost(s,i))}</b></button>`).join("");idleShow()}
+function idleShow(){const s=S.s;$("gm-n").textContent=fmt(s.n);$("gm-ps").textContent=fmt(idleRate(s));$("gm-cv2").textContent=fmt(clVal(s));
+ document.querySelectorAll("#gm-shop button").forEach((b,i)=>{b.disabled=s.n<(i===0?upCost(s):gCost(s,i-1))})}
+function idleTick(){const s=S;if(!s||s.g!=="idle"||s.dead)return;const now=Date.now(),dt=Math.min(5,(now-s.last)/1000);s.last=now;const gain=idleRate(s.s)*dt;s.s.n+=gain;s.s.tot+=gain;idleShow();
+ if((s.sv+=dt)>5){s.sv=0;idleSave()}later(idleTick,200)}
+function idleTap(){const s=S;if(!s||s.g!=="idle")return;s.s.n+=clVal(s.s);s.s.tot+=clVal(s.s);idleShow()}
+function idleBuy(i){const s=S.s;if(S.g!=="idle"||s.n<gCost(s,i))return;s.n-=gCost(s,i);s.g[i]++;idlePanel()}
+function idleUp(){const s=S.s;if(S.g!=="idle"||s.n<upCost(s))return;s.n-=upCost(s);s.cl++;idlePanel()}
+function idleReset(){if(!confirm("Reset Beat factory progress? This can't be undone."))return;try{localStorage.removeItem(IDK)}catch(e){}S.dead=true;S.s=null;idleStart()}
+window.addEventListener("pagehide",()=>{if(S&&S.g==="idle")idleSave()});
+/* ---------- History trivia ---------- */
+const TV={
+"Ancient Egypt":["Whose tomb did Howard Carter find in 1922?|Tutankhamun|Ramses II|Khufu|Akhenaten","The Rosetta Stone helped scholars decode which writing?|Hieroglyphs|Cuneiform|Linear B|Runes","Which is the largest pyramid at Giza?|Great Pyramid of Khufu|Pyramid of Menkaure|Step Pyramid of Djoser|Bent Pyramid","Which river was the lifeline of ancient Egypt?|Nile|Tigris|Indus|Jordan"],
+"Ancient Greece":["At which battle did Athens defeat a Persian army in 490 BC?|Marathon|Thermopylae|Salamis|Plataea","Which philosopher tutored Alexander the Great?|Aristotle|Plato|Socrates|Epicurus","Which Greek city-state was famous for its military society?|Sparta|Corinth|Thebes|Delphi","Where were the ancient Olympic Games held?|Olympia|Athens|Delphi|Sparta"],
+"Roman Empire":["In which year BC was Julius Caesar assassinated?|44 BC|49 BC|31 BC|27 BC","Who was the first Roman emperor?|Augustus|Julius Caesar|Nero|Trajan","Which Carthaginian general crossed the Alps with elephants?|Hannibal|Scipio|Hamilcar|Spartacus","When is the Western Roman Empire traditionally said to have fallen?|476 AD|410 AD|330 AD|1453 AD"],
+"Medieval Europe":["In which year was the Battle of Hastings?|1066|1086|1215|1415","Which document did King John seal in 1215?|Magna Carta|Domesday Book|Bill of Rights|Golden Bull","In which century did the Black Death devastate Europe?|14th|12th|16th|10th","Who was crowned emperor by Pope Leo III in 800?|Charlemagne|Clovis|Otto I|Charles Martel"],
+"Renaissance":["Who painted the Sistine Chapel ceiling?|Michelangelo|Raphael|Leonardo da Vinci|Botticelli","In which century did Gutenberg develop movable-type printing in Europe?|15th|13th|17th|12th","Which Italian city is often called the birthplace of the Renaissance?|Florence|Venice|Rome|Milan","Who wrote The Prince?|Niccolò Machiavelli|Dante Alighieri|Petrarch|Erasmus"],
+"Age of Exploration":["In which year did Columbus first sail across the Atlantic to the Americas?|1492|1498|1519|1488","Which explorer led the expedition that began the first circumnavigation in 1519?|Ferdinand Magellan|Vasco da Gama|James Cook|Francis Drake","Which country did Vasco da Gama reach by sea in 1498?|India|China|Brazil|Japan","Hernán Cortés conquered which empire?|Aztec|Inca|Maya|Olmec"],
+"American Revolution":["In which year was the Declaration of Independence adopted?|1776|1781|1789|1783","Who was the main author of the Declaration of Independence?|Thomas Jefferson|John Adams|Benjamin Franklin|George Washington","Which British general surrendered at Yorktown in 1781?|Charles Cornwallis|John Burgoyne|William Howe|Henry Clinton","Which treaty formally ended the war in 1783?|Treaty of Paris|Treaty of Versailles|Treaty of Ghent|Treaty of Utrecht"],
+"French Revolution":["In which year was the Bastille stormed?|1789|1799|1776|1804","Which revolutionary leader dominated the Reign of Terror?|Maximilien Robespierre|Marquis de Lafayette|Jacques Necker|Comte de Mirabeau","Which French king was executed in 1793?|Louis XVI|Louis XIV|Charles X|Louis XVIII","Which 1789 document set out basic rights in France?|Declaration of the Rights of Man and of the Citizen|Napoleonic Code|Edict of Nantes|Concordat of 1801"],
+"Napoleonic Era":["In which year was Napoleon defeated at Waterloo?|1815|1812|1805|1821","On which island did Napoleon die in exile?|Saint Helena|Elba|Corsica|Malta","Which 1805 battle is nicknamed the Battle of the Three Emperors?|Austerlitz|Leipzig|Borodino|Trafalgar","Which British admiral was killed at Trafalgar?|Horatio Nelson|Thomas Hardy|Cuthbert Collingwood|Arthur Wellesley"],
+"Industrial Revolution":["Who patented an improved steam engine in 1769?|James Watt|Thomas Edison|Richard Arkwright|George Stephenson","In which country did the Industrial Revolution begin?|Britain|France|Germany|United States","Who invented the spinning jenny?|James Hargreaves|Eli Whitney|Samuel Crompton|Edmund Cartwright","Eli Whitney is known for inventing what?|Cotton gin|Telegraph|Steam locomotive|Spinning mule"],
+"US Civil War":["At which fort did the Civil War begin in 1861?|Fort Sumter|Fort Henry|Fort McHenry|Fort Ticonderoga","Who was US president during the Civil War?|Abraham Lincoln|Ulysses S. Grant|Andrew Johnson|James Buchanan","In which year did the Emancipation Proclamation take effect?|1863|1861|1865|1860","Which Confederate general surrendered at Appomattox in 1865?|Robert E. Lee|Stonewall Jackson|Jefferson Davis|James Longstreet"],
+"World War I":["In which city was Archduke Franz Ferdinand assassinated?|Sarajevo|Vienna|Belgrade|Berlin","What was the date of the 1918 armistice?|11 November 1918|28 June 1919|3 November 1918|11 November 1919","Which treaty officially ended WWI with Germany?|Treaty of Versailles|Treaty of Brest-Litovsk|Treaty of Locarno|Treaty of Tordesillas","In which year did the United States enter World War I?|1917|1914|1916|1918"],
+"Interwar Years":["In which year did the Wall Street Crash happen?|1929|1925|1933|1939","Who founded Italian Fascism and led Italy from 1922?|Benito Mussolini|Francisco Franco|António Salazar|Giovanni Giolitti","Which Bolshevik leader headed the Soviet government after the 1917 October Revolution?|Vladimir Lenin|Joseph Stalin|Alexander Kerensky|Nicholas II","What was Franklin D. Roosevelt's set of Depression-era programs called?|New Deal|Fair Deal|Great Society|Square Deal"],
+"World War II":["Germany's 1939 invasion of which country started WWII in Europe?|Poland|Czechoslovakia|France|Austria","What was the date of the D-Day landings?|6 June 1944|6 June 1943|8 May 1945|7 December 1941","In which year was Pearl Harbor attacked?|1941|1939|1940|1942","Atomic bombs hit Hiroshima and which other Japanese city?|Nagasaki|Kyoto|Tokyo|Osaka"],
+"Cold War":["In which year did the Berlin Wall fall?|1989|1961|1991|1985","Which 1962 standoff nearly led to nuclear war?|Cuban Missile Crisis|Suez Crisis|Berlin Blockade|Korean War","Which alliance was founded in 1949 by the US and Western allies?|NATO|Warsaw Pact|SEATO|OPEC","In which year was the Soviet Union dissolved?|1991|1989|1985|1993"],
+"Space Race":["What was the first artificial satellite, launched in 1957?|Sputnik 1|Explorer 1|Vostok 1|Apollo 11","Who was the first human in space?|Yuri Gagarin|Alan Shepard|John Glenn|Valentina Tereshkova","Who was the first person to walk on the Moon?|Neil Armstrong|Buzz Aldrin|Michael Collins|Yuri Gagarin","In which year did Apollo 11 land on the Moon?|1969|1965|1972|1961"],
+"Ancient & Imperial Asia":["Which ruler first unified China in 221 BC?|Qin Shi Huang|Han Wudi|Kublai Khan|Tang Taizong","Who founded the Mongol Empire?|Genghis Khan|Kublai Khan|Timur|Attila","Which country underwent the Meiji Restoration?|Japan|China|Korea|Thailand","Which Indian empire did Ashoka rule?|Maurya|Gupta|Mughal|Chola"],
+"Middle East & Africa":["Which sultan captured Constantinople in 1453?|Mehmed II|Suleiman the Magnificent|Selim I|Osman I","Mansa Musa ruled which West African empire?|Mali|Songhai|Ghana|Aksum","In which year did the Suez Canal open?|1869|1805|1914|1956","In which year did Nelson Mandela become South Africa's president?|1994|1990|1984|2000"],
+"Latin America":["Who led the Haitian Revolution against French rule?|Toussaint Louverture|Simón Bolívar|José de San Martín|Miguel Hidalgo","What was the capital of the Inca Empire?|Cusco|Machu Picchu|Tenochtitlan|Quito","Who launched Mexico's independence movement with the 1810 Grito de Dolores?|Miguel Hidalgo|Benito Juárez|Pancho Villa|Emiliano Zapata","In which year did the Panama Canal open?|1914|1869|1903|1930"],
+"Modern History":["In which year was the Maastricht Treaty signed, creating the European Union?|1992|1985|1999|2004","In which year did the September 11 attacks occur?|2001|1999|2003|2005","The 1998 Good Friday Agreement concerned which region?|Northern Ireland|Cyprus|Kosovo|Bosnia","In which year did euro banknotes and coins enter circulation?|2002|1999|2004|1995"]};
+const TVK="plremix:games-tv";let tvCat="";
+function tvAdd(txt){let n=0;String(txt).split("\n").forEach(l=>{const p=l.split("|").map(x=>x.trim());if(p.length===6&&p.every(Boolean)){(TV[p[0]]=TV[p[0]]||[]).push(p.slice(1).join("|"));n++}});return n}
+try{tvAdd(localStorage.getItem(TVK)||"")}catch(e){}
+const tvCount=()=>Object.values(TV).reduce((a,x)=>a+x.length,0);
+function tvMenu(){stop();const cats=Object.keys(TV);shell("History trivia","",`<p class="hint">${tvCount()} questions in ${cats.length} categories. Each game asks 10.</p><div class="acts"><label for="gm-cat">Category</label><select id="gm-cat"><option value="">All categories</option>${cats.map(c=>`<option value="${E(c)}">${E(c)} (${TV[c].length})</option>`).join("")}</select><button type="button" data-gm="tvgo">Play 10 questions</button></div>
+ <details><summary>Add your own questions</summary><p class="hint">One per line: Category|Question|Correct answer|Wrong 1|Wrong 2|Wrong 3</p><textarea id="gm-add" rows="4" style="width:100%" aria-label="Questions to add"></textarea><div class="acts"><button type="button" class="sm" data-gm="tvadd">Add questions</button><span class="hint" id="gm-addm"></span></div></details>`)}
+function tvGo(){const sel=$("gm-cat");tvCat=sel?sel.value:tvCat;const all=[];for(const c in TV)if(!tvCat||c===tvCat)TV[c].forEach(l=>all.push([c,...l.split("|")]));
+ const items=shuf(all).slice(0,10).map(([c,q,a,...w])=>({q,sub:c,opts:shuf([a,...w]),ans:a}));if(!items.length){return}mcStart("tv","History trivia",items)}
+function tvAddUi(){const t=$("gm-add").value,n=tvAdd(t);if(n){try{localStorage.setItem(TVK,(localStorage.getItem(TVK)||"")+"\n"+t)}catch(e){}}$("gm-addm").textContent=n?n+" added. Total: "+tvCount()+".":"No valid lines found (each needs 6 parts separated by |).";}
+/* ---------- wiring ---------- */
+const ACT={hub,q:qStart,qnext:()=>{S.i++;qRound()},qend:qEnd,hl:hlStart,hln:hlNext,tap:tapStart,tapgo:tapGo,mem:memStart,hm:hmStart,hmnext:()=>{S.i++;hmRound()},hmend:hmEnd,cat:catStart,cats:catGo,dec:decStart,mcnext:()=>{S.i++;mcRound()},mcend:mcEnd,scr:scrStart,scrchk:scrCheck,scrhint:scrHint,scrskip:()=>{if(S&&S.g==="scr"&&!S.locked)scrDone(0,"It was "+E(S.art)+".")},scrnext:()=>{S.i++;scrRound()},scrend:scrEnd,sim:simStart,simgo:simGo,ord:ordStart,ear:earStart,idle:idleStart,idletap:idleTap,idlereset:idleReset,idleu:idleUp,tv:tvMenu,tvgo:tvGo,tvadd:tvAddUi,earr:()=>{if(S&&S.g==="ear"&&!S.answered)earPlay()}};
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#gamesb [data-gm]");if(!b)return;const a=b.dataset.gm;
+ if(a==="qa")qAnswer(+b.dataset.i);else if(a==="hlg")hlGuess(+b.dataset.d);else if(a==="memc")memFlip(+b.dataset.i);else if(a==="hmk")hmGuess(b.dataset.k);else if(a==="mca")mcAnswer(+b.dataset.i);else if(a==="simp")simPress(+b.dataset.i);else if(a==="ordt")ordTap(+b.dataset.i);else if(a==="eara")earAnswer(+b.dataset.d);else if(a==="idleb")idleBuy(+b.dataset.i);else if(ACT[a])ACT[a]()});
+document.addEventListener("keydown",e=>{const v=$("v-games");if(!v||v.hidden||!S||S.g!=="tap"||S.phase!=="tap"||e.repeat)return;
+ if(e.code==="Space"||e.code==="Enter"){e.preventDefault();tapHit()}});
+document.addEventListener("keydown",e=>{const v=$("v-games");if(!v||v.hidden||!S||S.g!=="hm"||S.locked||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;const t=e.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;if(/^Key[A-Z]$/.test(e.code))hmGuess(e.code.slice(3))});
+window.addEventListener("hashchange",()=>{if((location.hash||"").slice(1)!=="games")stop()});
+window.PRGames={draw:hub,stop};
+if((location.hash||"").slice(1)==="games")hub();
+})();
 </script>
 </body>
 </html>
