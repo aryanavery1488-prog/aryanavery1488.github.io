@@ -176,6 +176,16 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 
 <section class="card vw" id="v-set" data-views="settings" aria-labelledby="seh"><h2 id="seh">Settings</h2><div id="setb"></div></section>
 
+<section class="card vw" id="v-support" data-views="support" aria-labelledby="support-h">
+<h2 id="support-h">Support</h2>
+<p class="hint" style="margin-top:0">Send a support request to the Playlist Remixer team. Your message and a random browser ID will be stored to help us respond.</p>
+<form id="pr-support-form">
+<label for="pr-support-subject">Subject</label><input id="pr-support-subject" type="text" maxlength="150" required placeholder="What do you need help with?">
+<label for="pr-support-message" style="margin-top:10px">Message</label><textarea id="pr-support-message" maxlength="5000" required placeholder="Describe the problem and what you expected to happen."></textarea>
+<div class="acts" style="margin-top:10px"><button type="submit" id="pr-support-submit">Send support request</button><span id="pr-support-status" class="hint" role="status" aria-live="polite"></span></div>
+</form>
+</section>
+
 <section class="card" id="xfer" data-views="transfer" aria-labelledby="xferh">
 <h2 id="xferh">Transfer music</h2>
 <p class="hint" id="plxmode" style="margin-top:0"></p>
@@ -2529,10 +2539,56 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
 })();
 </script>
 <script>
+/* Playlist Remixer backend integration: support tickets and privacy-minimal error reports. */
+(function(){
+ "use strict";
+ const API="https://aryan.aryanavery1488.workers.dev";
+ const USER_KEY="plremix:backend-user:v1";
+ const getUserId=()=>{try{return localStorage.getItem(USER_KEY)||""}catch(e){return ""}};
+ const setUserId=id=>{try{localStorage.setItem(USER_KEY,id)}catch(e){throw new Error("Browser storage is unavailable. Allow site data and try again.")}};
+ async function ensureUser(){
+  let id=getUserId();if(id)return id;
+  const r=await fetch(API+"/api/users",{method:"POST",headers:{Accept:"application/json"}});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok||!d.userId)throw new Error(d.error||"Could not register this browser with the support service.");
+  setUserId(d.userId);return d.userId;
+ }
+ async function sendError(message,type){
+  try{
+   const body={message:String(message||"Unknown application error").slice(0,1500),type:String(type||"application").slice(0,80),page:location.pathname.slice(0,200)};
+   const id=getUserId();if(id)body.userId=id;
+   await fetch(API+"/api/errors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});
+  }catch(e){/* Reporting must never interfere with the app. */}
+ }
+ const form=document.getElementById("pr-support-form");
+ if(form){
+  form.addEventListener("submit",async e=>{
+   e.preventDefault();const btn=document.getElementById("pr-support-submit"),status=document.getElementById("pr-support-status");
+   const subject=document.getElementById("pr-support-subject").value.trim(),message=document.getElementById("pr-support-message").value.trim();
+   if(!subject||!message){status.textContent="Enter a subject and message.";return}
+   btn.disabled=true;status.textContent="Sending…";
+   try{
+    const userId=await ensureUser();
+    const r=await fetch(API+"/api/tickets",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({userId,subject,message})});
+    const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.error||"The support request could not be sent.");
+    form.reset();status.textContent="Request sent. Ticket #"+d.ticketId+".";
+   }catch(err){status.textContent=err.message||"Could not send your request. Try again later."}
+   finally{btn.disabled=false}
+  });
+ }
+ // Limit automatic reports per tab; omit stack traces, query strings and fragments.
+ let reportCount=0,lastReport=0;
+ function report(message,type){const now=Date.now();if(reportCount>=10||now-lastReport<30000)return;reportCount++;lastReport=now;sendError(message,type)}
+ window.addEventListener("error",e=>{if(e&&e.message)report(e.message,"window.error")});
+ window.addEventListener("unhandledrejection",e=>{const r=e&&e.reason;report(r&&r.message?r.message:String(r||"Unhandled promise rejection"),"unhandledrejection")});
+})();
+</script>
+
+<script>
 /* Navigation shell: five primary destinations plus a grouped More menu. */
 (function(){
 const PRIMARY=[["home","Home","🏠"],["transfer","Transfer","🔀"],["mymusic","My Music","🎵"],["tools","Playlist Tools","🛠"],["more","More","•••"]];
-const EXTRA=[["sync","Sync playlists","🔄"],["insights","Insights","📊"],["history","Transfer history","🕘"],["backups","Backups","💾"],["appearance","Appearance","🎨"],["settings","Settings","⚙️"]];
+const EXTRA=[["sync","Sync playlists","🔄"],["insights","Insights","📊"],["history","Transfer history","🕘"],["backups","Backups","💾"],["support","Support","✉️"],["appearance","Appearance","🎨"],["settings","Settings","⚙️"]];
 const VALID=new Set([...PRIMARY.map(x=>x[0]),...EXTRA.map(x=>x[0])]);
 const g=id=>document.getElementById(id);let cur="home";
 const nav=document.createElement("nav");nav.id="sn";nav.setAttribute("aria-label","Main navigation");
