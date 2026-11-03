@@ -165,13 +165,13 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 
 <section class="card vw" id="v-ins" data-views="insights" aria-labelledby="ih"><h2 id="ih">Insights</h2>
 <p class="hint" style="margin-top:0">Counts and charts are computed on this device from your imported metadata. Tempo, key and energy come from your files, not from audio analysis.</p>
-<div class="acts"><button id="in">Library insights</button><button class="sec" id="ch">Charts</button></div></section>
+<div class="acts"><button type="button" id="in">Library insights</button><button type="button" class="sec" id="ch">Charts</button></div></section>
 
 <section class="card vw" id="v-hist" data-views="history" aria-labelledby="hih"><h2 id="hih">Transfer history</h2><div id="plxh"></div></section>
 
 <section class="card vw" id="v-bk" data-views="backups" aria-labelledby="bh"><h2 id="bh">Backups</h2>
 <p class="hint" style="margin-top:0">A backup is a JSON file with your library and every duplicate and conflict decision. Appearance looks are saved separately in the Appearance panel.</p>
-<div class="acts"><button id="bk">Back up library</button><button class="sec" id="rs">Restore backup</button><input type="file" id="rsf" accept=".json" hidden></div>
+<div class="acts"><button type="button" id="bk">Back up library</button><button type="button" class="sec" id="rs">Restore backup</button><input type="file" id="rsf" accept=".json" hidden></div>
 <div id="bkinfo" class="hint"></div></section>
 
 <section class="card vw" id="v-set" data-views="settings" aria-labelledby="seh"><h2 id="seh">Settings</h2><div id="setb"></div></section>
@@ -204,7 +204,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <textarea id="txt" placeholder="Daft Punk - Digital Love&#10;Tame Impala - The Less I Know The Better"></textarea>
 <div class="row" style="margin-top:10px;align-items:end">
 <div><label for="file">…or upload CSV / JSON / TXT files</label><input type="file" id="file" multiple accept=".csv,.json,.txt,.tsv"></div>
-<div style="flex:0 0 auto"><button id="add">Add to library</button> <button class="sec" id="demo">Try sample data</button></div>
+<div style="flex:0 0 auto"><button type="button" id="add">Add to library</button> <button type="button" class="sec" id="demo">Try sample data</button></div>
 </div>
 <label class="hint" for="auto-enrich" style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--tx)"><input id="auto-enrich" type="checkbox"> Find missing album covers online (off by default). For tracks shown on screen, the artist and title text is sent to Apple’s public iTunes Search (itunes.apple.com) and cover images load from Apple’s servers. Nothing is sent while this is off.</label>
 <p class="hint" style="margin:0 0 8px">When enabled, Playlist Remixer checks Spotify first (if you have connected it). Apple’s public music catalog is used only when Spotify does not return a confident match. If neither finds a confident match, it uses the song with the most similar title and marks it as a “closest title” guess. Only the title and artist (and ISRC if available) of the track being looked up are sent to the providers actually used for that lookup. Existing values are never overwritten automatically.</p>
@@ -224,7 +224,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <h2>2 · Build better playlists</h2>
 <div class="row" style="align-items:end">
 <div><label for="len">Tracks per playlist</label><input type="number" id="len" value="30" min="5" max="200"></div>
-<div style="flex:0 0 auto"><button id="go">Build playlists</button></div>
+<div style="flex:0 0 auto"><button type="button" id="go">Build playlists</button></div>
 </div>
 </section>
 
@@ -232,7 +232,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <h2>3 · Smart tools</h2>
 <p class="hint" style="margin-top:0">Rules use whatever BPM, energy, key, year, producer and label columns your files have. Blank boxes are ignored.</p>
 <label for="nl">Or describe it in words</label>
-<div class="row"><div><input type="text" id="nl" placeholder="e.g. upbeat songs 120 to 130 BPM from 2010 to 2020, avoid live and remix"></div><div style="flex:0 0 auto"><button class="sec" id="nlb">Fill in rules</button></div></div>
+<div class="row"><div><input type="text" id="nl" placeholder="e.g. upbeat songs 120 to 130 BPM from 2010 to 2020, avoid live and remix"></div><div style="flex:0 0 auto"><button type="button" class="sec" id="nlb">Fill in rules</button></div></div>
 <p class="hint" style="margin:6px 0 12px">This reads simple patterns only (BPM ranges, energy words, years or decades, Camelot keys like 8A, “avoid …”). It is not AI, and it doesn’t know your skip history. It fills the boxes below so you can check them.</p>
 <div class="row">
 <div><label for="b1">BPM from</label><input type="number" id="b1"></div>
@@ -249,14 +249,14 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 </div>
 <div class="row" style="margin-top:10px"><div><label for="sx">Exclude (artist, title, genre… comma-separated)</label><input type="text" id="sx" placeholder="e.g. live, remix"></div><div><label for="sk">Only these keys (Camelot)</label><input type="text" id="sk" placeholder="e.g. 8A, 9A, 8B"></div></div>
 <details><summary>Pinned and excluded songs (<span id="pinsum"></span>)</summary><div id="pinbox"></div><p class="hint">Pinned songs always lead a smart playlist. Excluded songs never appear in smart playlists or “Find related”. Saved in this browser; not included in library backups.</p></details>
-<div class="acts" style="margin-top:12px"><button id="sg">Build smart playlist</button></div>
+<div class="acts" style="margin-top:12px"><button type="button" id="sg">Build smart playlist</button></div>
 <label for="seed">Find songs related to…</label>
-<div class="row"><div><input type="text" id="seed" placeholder="Part of a title or artist"></div><div style="flex:0 0 auto"><button class="sec" id="rl">Find related</button></div></div>
+<div class="row"><div><input type="text" id="seed" placeholder="Part of a title or artist"></div><div style="flex:0 0 auto"><button type="button" class="sec" id="rl">Find related</button></div></div>
 <details><summary>Adjust what “related” means</summary><div class="row" id="wts" style="margin-top:8px"></div><p class="hint">0 ignores a factor, 5 makes it count most. Each result lists the factors that matched.</p></details>
 </section>
 
 <section class="card vw" id="v-lib" data-views="mymusic" aria-labelledby="lh"><h2 id="lh">Your library</h2><p id="enrich-status" class="hint" role="status" aria-live="polite">Online metadata lookup can fill missing album details and artwork without changing information you already imported.</p><div id="libb"></div>
-<div class="acts" style="margin-top:10px"><button class="sec" id="dp">Duplicates</button> <button class="sec" id="clr">Clear library</button></div>
+<div class="acts" style="margin-top:10px"><button type="button" class="sec" id="dp">Duplicates</button> <button type="button" class="sec" id="clr">Clear library</button></div>
 <p class="hint">“Clear library” erases the working library. Your backups, saved looks and backgrounds are not affected.</p></section>
 
 <div id="out" data-views="tools mymusic insights"></div>
@@ -2044,9 +2044,9 @@ D.addEventListener&&D.addEventListener("DOMContentLoaded",draw);
 })(typeof window!=="undefined"?window:globalThis);
 
 </script>
-<div id="ml" aria-hidden="true"></div><div id="mc" hidden><div id="mb" role="status" aria-live="polite" hidden></div><button class="mcb" id="mcb"></button></div><canvas id="fx" aria-hidden="true"></canvas><canvas id="cf" aria-hidden="true"></canvas>
-<button id="fab" aria-label="Customize appearance" title="Customize">🎨</button><button id="bkp">Back to page</button>
-<div id="ov"></div><aside id="dr" role="dialog" aria-modal="true" aria-label="Customize appearance"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">🎨 Customize</h2><button class="sec sm" id="dx" aria-label="Close customization">✕</button></div><div class="tabs" role="tablist"></div><div id="db"></div><input type="file" id="imf" accept=".json" hidden><input type="file" id="bgf" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden></aside>
+<div id="ml" aria-hidden="true"></div><div id="mc" hidden><div id="mb" role="status" aria-live="polite" hidden></div><button type="button" class="mcb" id="mcb" aria-label="Your buddy. Show a message."></button></div><canvas id="fx" aria-hidden="true"></canvas><canvas id="cf" aria-hidden="true"></canvas>
+<button type="button" id="fab" aria-label="Customize appearance" title="Customize">🎨</button><button type="button" id="bkp">Back to page</button>
+<div id="ov"></div><aside id="dr" role="dialog" aria-modal="true" aria-label="Customize appearance"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">🎨 Customize</h2><button type="button" class="sec sm" id="dx" aria-label="Close customization">✕</button></div><div class="tabs" role="tablist"></div><div id="db"></div><input type="file" id="imf" accept=".json" hidden><input type="file" id="bgf" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden></aside>
 <script>
 (()=>{
 const $=id=>document.getElementById(id),R=document.documentElement,B=document.body,KEY="plremix:look";
@@ -2569,15 +2569,20 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
    return;
   }
   if(!window.turnstile||widgetId!==null)return;
-  widgetId=window.turnstile.render(mount,{
-   sitekey:TURNSTILE_SITE_KEY,
-   action:"support_ticket",
-   theme:"auto",
-   "refresh-expired":"auto",
-   callback:()=>{if(status&&status.textContent.includes("verification"))status.textContent=""},
-   "expired-callback":()=>{if(status)status.textContent="Verification expired. Complete it again."},
-   "error-callback":()=>{if(status)status.textContent="Verification could not load. Refresh the page and try again."}
-  });
+  try{
+   widgetId=window.turnstile.render(mount,{
+    sitekey:TURNSTILE_SITE_KEY,
+    action:"support_ticket",
+    theme:"auto",
+    "refresh-expired":"auto",
+    callback:()=>{if(status&&status.textContent.toLowerCase().includes("verification"))status.textContent=""},
+    "expired-callback":()=>{if(status)status.textContent="Verification expired. Complete it again."},
+    "error-callback":()=>{if(status)status.textContent="Verification could not load. Refresh the page and try again."}
+   });
+  }catch(error){
+   console.error("Turnstile widget initialization failed:",error);
+   if(status)status.textContent="Human verification could not start. Refresh the page and try again.";
+  }
  }
  function loadTurnstile(){
   if(!form||!TURNSTILE_SITE_KEY||TURNSTILE_SITE_KEY.startsWith("REPLACE_")){renderTurnstile();return}
@@ -2587,8 +2592,8 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
   const script=document.createElement("script");
   script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
   script.async=true;script.defer=true;
-  script.onload=renderTurnstile;
-  script.onerror=()=>{if(status)status.textContent="Could not load human verification. Check your connection and refresh."};
+  script.onload=()=>{turnstileLoading=false;renderTurnstile()};
+  script.onerror=()=>{turnstileLoading=false;if(status)status.textContent="Could not load human verification. Check your connection and refresh."};
   document.head.appendChild(script);
  }
  loadTurnstile();
@@ -2610,7 +2615,11 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
      body:JSON.stringify({userId,subject,message,turnstileToken})
     });
     const d=await r.json().catch(()=>({}));
-    if(!r.ok||!d.success)throw new Error(d.error||"The support request could not be sent.");
+    if(!r.ok||!d.success){
+     const code=d.code?" ["+d.code+"]":" (HTTP "+r.status+")";
+     const trace=d.requestId?" Reference: "+d.requestId:"";
+     throw new Error((d.error||"The support request could not be sent.")+code+trace);
+    }
     form.reset();status.textContent="Request sent. Ticket #"+d.ticketId+".";
    }catch(err){status.textContent=err.message||"Could not send your request. Try again later."}
    finally{
