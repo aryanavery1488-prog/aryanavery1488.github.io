@@ -178,7 +178,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 
 <section class="card vw" id="v-support" data-views="support" aria-labelledby="support-h">
 <h2 id="support-h">Support</h2>
-<p class="hint" style="margin-top:0">Send a support request to the Playlist Remixer team. Your message and a random browser ID will be stored. Include an email address or Discord username in your message if you want a reply.</p>
+<p class="hint" style="margin-top:0">Send a support request to the Playlist Remixer team. Your message and a random browser ID will be stored. To help diagnose issues, we also record your IP address, browser/device user-agent, and approximate location with the ticket. Approximate location is provided by Cloudflare and is not GPS. Include an email address or Discord username in your message if you want a reply.</p>
 <form id="pr-support-form">
 <label for="pr-support-subject">Subject</label><input id="pr-support-subject" type="text" maxlength="150" required placeholder="What do you need help with?">
 <label for="pr-support-message" style="margin-top:10px">Message</label><textarea id="pr-support-message" maxlength="5000" required placeholder="Describe the problem and what you expected to happen."></textarea>
@@ -2544,7 +2544,7 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
 (function(){
  "use strict";
  const API="https://aryan.aryanavery1488.workers.dev";
- const TURNSTILE_SITE_KEY="REPLACE_WITH_YOUR_TURNSTILE_SITE_KEY";
+ const TURNSTILE_SITE_KEY="0x4AAAAAAFxjFPZsow074p5g";
  const USER_KEY="plremix:backend-user:v1";
  const form=document.getElementById("pr-support-form");
  const status=document.getElementById("pr-support-status");
