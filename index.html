@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Playlist Remixer</title>
+<meta name="description" content="Organize your music library, build playlists and move them between music services. Everything stays in your browser.">
+<meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141417" media="(prefers-color-scheme: dark)">
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1f;--mu:#6b6b72;--ac:#5b47e0;--ac2:#eeebff;--bd:#e2e0da;--ok:#1f8a4c;--on:#fff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -151,6 +154,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 </style>
 </head>
 <body>
+<noscript><div style="padding:16px;margin:12px;border:2px solid #b00;border-radius:8px;font:16px system-ui,sans-serif;background:#fff;color:#000">Playlist Remixer needs JavaScript to run. Please turn it on in your browser settings and reload this page.</div></noscript>
 <main>
 <h1>🎧 Playlist Remixer</h1>
 <p class="sub" data-views="home">Import playlists from supported music services, organize your local music library, and build smarter playlists with the metadata you already have.</p>
@@ -172,7 +176,8 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <section class="card vw" id="v-bk" data-views="backups" aria-labelledby="bh"><h2 id="bh">Backups</h2>
 <p class="hint" style="margin-top:0">A backup is a JSON file with your library and every duplicate and conflict decision. Appearance looks are saved separately in the Appearance panel.</p>
 <div class="acts"><button type="button" id="bk">Back up library</button><button type="button" class="sec" id="rs">Restore backup</button><input type="file" id="rsf" accept=".json" hidden></div>
-<div id="bkinfo" class="hint"></div></section>
+<div id="bkinfo" class="hint"></div>
+<h3 style="font-size:15px;margin:14px 0 4px">Storage protection</h3><p id="pr-persist" class="hint" role="status" style="margin:0 0 8px"></p><div class="acts"><button type="button" class="sec" id="pr-persist-btn" hidden>Ask the browser to keep my data</button></div></section>
 
 <section class="card vw" id="v-set" data-views="settings" aria-labelledby="seh"><h2 id="seh">Settings</h2><div id="setb"></div></section>
 <section class="card vw" id="v-games" data-views="games" aria-labelledby="gmh"><h2 id="gmh">Mini games</h2><div id="gamesb"></div></section>
@@ -204,7 +209,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <label for="txt" style="margin-top:10px">Paste tracks (one per line: “Artist - Title”) or paste CSV / JSON</label>
 <textarea id="txt" placeholder="Daft Punk - Digital Love&#10;Tame Impala - The Less I Know The Better"></textarea>
 <div class="row" style="margin-top:10px;align-items:end">
-<div><label for="file">…or upload CSV / JSON / TXT files</label><input type="file" id="file" multiple accept=".csv,.json,.txt,.tsv"></div>
+<div><label for="file">…or upload CSV / JSON / TXT files (you can also drag them onto this card)</label><input type="file" id="file" multiple accept=".csv,.json,.txt,.tsv"></div>
 <div style="flex:0 0 auto"><button type="button" id="add">Add to library</button> <button type="button" class="sec" id="demo">Try sample data</button></div>
 </div>
 <label class="hint" for="auto-enrich" style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;color:var(--tx)"><input id="auto-enrich" type="checkbox"> Find missing album covers online (off by default). For tracks shown on screen, the artist and title text is sent to Apple’s public iTunes Search (itunes.apple.com) and cover images load from Apple’s servers. Nothing is sent while this is off.</label>
@@ -330,7 +335,7 @@ async function initLib(){
  }catch(e){PERSIST.mode="ls";PERSIST.info="Migration not completed ("+(e&&e.message)+"); using localStorage.";try{lib=[];sep=new Set();join=new Set();ovr={};part={};alias={};rej=new Set();aka={};skipT=new Set();defer=new Set();LOADERR=null;load()}catch(_){}}
 }
 
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const NORM_CACHE=new Map();
 const norm=s=>{const raw=String(s||"");if(NORM_CACHE.has(raw))return NORM_CACHE.get(raw);const r=raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");const n=r.replace(/\(.*?\)|\[.*?\]/g,"").replace(/\s-\s.*\b(remaster(?:ed)?|live|version|mix|edit)\b.*$/g,"").replace(/[^\p{L}\p{N}]+/gu,"");const result=n||r.replace(/[^\p{L}\p{N}]+/gu,"");NORM_CACHE.set(raw,result);if(NORM_CACHE.size>6000)NORM_CACHE.delete(NORM_CACHE.keys().next().value);return result};
 /* strict: the whole value must be a number ("120abc" and "1,5" are NOT numbers); "1,234" is read as 1234 */
@@ -1087,6 +1092,7 @@ function mixOrder(arr){const pool=arr.slice(),res=[];if(!pool.length)return res;
  return res}
 function show(p){window.PL=window.PL||[];const i=PL.length;PL.push(p);$("out").insertAdjacentHTML("afterbegin",card(p,i));goOut()}
 const PINK="plremix:pins";let PINS=(()=>{try{const d=JSON.parse(localStorage.getItem(PINK)||"{}"),ok=a=>Array.isArray(a)?a.filter(z=>z&&typeof z.k=="string"):[];return{p:ok(d.p),x:ok(d.x)}}catch(e){return{p:[],x:[]}}})();
+const GKEYS=["plremix:games","plremix:idle","plremix:games-tv"];function gSnap(){const o={};for(const k of GKEYS){try{const v=localStorage.getItem(k);if(v!=null&&v.length<=200000)o[k]=v}catch(e){}}return o}
 const tk=x=>norm(x.a)+"|"+norm(x.t),pinSave=()=>{try{localStorage.setItem(PINK,JSON.stringify(PINS))}catch(e){}};
 function pinT(i,j,m){const x=window.PL&&PL[i]&&PL[i].t[j];if(!x)return;const k=tk(x),o=m=="p"?"x":"p";
  PINS[o]=PINS[o].filter(z=>z.k!=k);if(!PINS[m].some(z=>z.k==k))PINS[m].push({k,l:x.a+" – "+x.t});pinSave();pinUI();
@@ -1238,14 +1244,19 @@ function checkBackup(d){if(!d||typeof d!="object"||d.app!="plremix")return{err:"
  const sa=v=>v===undefined||(Array.isArray(v)&&v.every(z=>typeof z=="string"));if(!sa(d.skipT)||!sa(d.defer))return{err:"The conflict decisions in the backup are damaged."};
  const so=v=>v===undefined||(v&&typeof v=="object"&&!Array.isArray(v)&&Object.values(v).every(z=>typeof z=="string"));if(!so(d.part)||!so(d.alias)||!so(d.aka)||(d.rej!==undefined&&!(Array.isArray(d.rej)&&d.rej.every(z=>typeof z=="string"))))return{err:"The duplicate decisions in the backup are damaged."};
  const ok=[],bad=[];d.lib.forEach((x,i)=>{const r=valTrack(x);r.t?ok.push(r.t):bad.push("entry "+(i+1)+": "+r.err)});
- if(!ok.length)return{err:"The backup contains no valid tracks."};return{lib:ok,sep:d.sep||[],join:d.join||[],ovr:d.ovr||{},part:d.part||{},alias:d.alias||{},rej:d.rej||[],aka:d.aka||{},skipT:d.skipT||[],defer:d.defer||[],bad}}
+ if(!ok.length)return{err:"The backup contains no valid tracks."};const vp=v=>{if(v===undefined)return undefined;if(!v||typeof v!="object")return null;const q=a=>Array.isArray(a)&&a.length<=5000&&a.every(z=>z&&typeof z.k=="string"&&typeof z.l=="string");return q(v.p)&&q(v.x)?{p:v.p.map(z=>({k:z.k,l:z.l})),x:v.x.map(z=>({k:z.k,l:z.l}))}:null};
+ const pins=vp(d.pins);if(pins===null)return{err:"The pinned and excluded tracks in the backup are damaged."};
+ let games;if(d.games!==undefined){const gm=d.games;if(!gm||typeof gm!="object"||Array.isArray(gm))return{err:"The game progress in the backup is damaged."};games={};for(const k of GKEYS)if(typeof gm[k]=="string"&&gm[k].length<=200000){if(k!="plremix:games-tv"){try{JSON.parse(gm[k])}catch(e){return{err:"The game progress in the backup is damaged."}}}games[k]=gm[k]}}
+ return{pins,games,lib:ok,sep:d.sep||[],join:d.join||[],ovr:d.ovr||{},part:d.part||{},alias:d.alias||{},rej:d.rej||[],aka:d.aka||{},skipT:d.skipT||[],defer:d.defer||[],bad}}
 $("bk").onclick=()=>{if(!lib.length){$("stat").textContent="Nothing to back up yet.";return}
- const u=URL.createObjectURL(new Blob([JSON.stringify({app:"plremix",v:2,created:new Date().toISOString(),count:lib.length,sum:hs(JSON.stringify(lib)),lib,sep:[...sep],join:[...join],ovr,part,alias,rej:[...rej],aka,skipT:[...skipT],defer:[...defer]})],{type:"application/json"})),a=document.createElement("a");a.href=u;a.download="playlist-remixer-backup.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);$("stat").textContent="Backup downloaded ("+lib.length+" entries)."};
+ const u=URL.createObjectURL(new Blob([JSON.stringify({app:"plremix",v:2,created:new Date().toISOString(),count:lib.length,sum:hs(JSON.stringify(lib)),lib,sep:[...sep],join:[...join],ovr,part,alias,rej:[...rej],aka,skipT:[...skipT],defer:[...defer],pins:PINS,games:gSnap()})],{type:"application/json"})),a=document.createElement("a");a.href=u;a.download="playlist-remixer-backup.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);$("stat").textContent="Backup downloaded ("+lib.length+" entries)."};
 async function restoreFrom(d,ask=true){const r=checkBackup(d);if(r.err){$("stat").textContent=r.err+" Nothing was changed.";return false}
  if(ask&&typeof confirm=="function"&&!confirm((lib.length?"Replace your current "+lib.length+" entries with ":"Restore ")+r.lib.length+" from the backup?"+(r.bad.length?" "+r.bad.length+" damaged entr"+(r.bad.length==1?"y":"ies")+" will be left out ("+r.bad.slice(0,3).join("; ")+").":"")))return false;
  const pl=lib,pd=decSnap();lib=r.lib;ensureIds();sep=new Set(r.sep);join=new Set(r.join);ovr=r.ovr;part=r.part;alias=r.alias;rej=new Set(r.rej);aka=r.aka;skipT=new Set(r.skipT);defer=new Set(r.defer);UND=null;
  let okS=save();if(okS&&PERSIST.mode==="idb"){await libIdle();okS=!PERSIST.err}
  if(!okS){lib=pl;decLoad(pd);save();$("stat").textContent="Your browser wouldn’t save the restored library, so your existing library was kept unchanged.";return false}
+ if(r.pins){PINS=r.pins;pinSave();pinUI()}
+ if(r.games){for(const k in r.games){try{localStorage.setItem(k,r.games[k])}catch(e){}}if(window.PRGames&&PRGames.reload)PRGames.reload()}
  chips();$("out").innerHTML="";document.dispatchEvent(new Event("plremix:libchanged"));$("stat").innerHTML='<span class="ok">Restored '+r.lib.length+" entries from the backup.</span>"+(r.bad.length?" "+r.bad.length+" damaged entries were left out.":"");return true}
 $("rs").onclick=()=>$("rsf").click();
 $("rsf").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;let d;try{d=JSON.parse(await readText(f))}catch(err){$("stat").textContent="That file isn’t valid JSON, so nothing was changed.";return}restoreFrom(d)};
@@ -2133,7 +2144,7 @@ let rk="";const kind=()=>{const c=LIB.find(x=>x.id==S.bgid);return c?c.type.star
 function refreshBg(){if(dr.classList.contains("o")&&S.tab=="t"&&kind()!==rk){tab();return}const l=document.getElementById("bgl"),t=document.getElementById("bgs2");if(l)l.innerHTML=bgList();if(t)t.textContent=bgStatus()}
 function bgList(){const q=bq.trim().toLowerCase();let L=LIB.filter(x=>(bsort!="fav"||x.fav)&&(!q||(x.name+" "+(x.cat||"")).toLowerCase().includes(q)));L=L.sort(bsort=="recent"?(a,b)=>(b.used||0)-(a.used||0):(a,b)=>b.added-a.added);
  if(!L.length)return `<p class="hint">${LIB.length?"No matches.":"Your library is empty."}</p>`;
- return L.map(x=>{const k=x.type.startsWith("video")?"Video":x.type=="image/gif"?"GIF":"Image",n=esc(x.name);return `<div class="tr" style="flex-wrap:wrap;gap:6px">${x.th?`<img src="${x.th}" alt="" width="44" height="44" style="border-radius:6px;object-fit:cover">`:`<span style="width:44px;text-align:center">🖼</span>`}<div class="m"><b>${n}${x.id==S.bgid?" ✓":""}</b><span>${k}${x.cat?" · "+esc(x.cat):""}</span></div>
+ return L.map(x0=>{const x={...x0,id:esc(x0.id),th:/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]*$/.test(x0.th||"")?x0.th:"",dur:+x0.dur>0?+x0.dur:"",type:String(x0.type||"")};const k=x.type.startsWith("video")?"Video":x.type=="image/gif"?"GIF":"Image",n=esc(x.name);return `<div class="tr" style="flex-wrap:wrap;gap:6px">${x.th?`<img src="${x.th}" alt="" width="44" height="44" style="border-radius:6px;object-fit:cover">`:`<span style="width:44px;text-align:center">🖼</span>`}<div class="m"><b>${n}${x.id==S.bgid?" ✓":""}</b><span>${k}${x.cat?" · "+esc(x.cat):""}</span></div>
 <button class="sm" data-a="bguse" data-v="${x.id}" aria-label="Use ${n}">Use</button><button class="sm sec" data-a="bgfav" data-v="${x.id}" aria-pressed="${!!x.fav}" aria-label="Favorite ${n}">${x.fav?"★":"☆"}</button><button class="sm sec" data-a="bgcat" data-v="${x.id}" aria-label="Set category for ${n}">Tag</button><button class="sm sec" data-a="bgdel" data-v="${x.id}" aria-label="Delete ${n}">Delete</button>
 <label style="display:flex;gap:4px;align-items:center;margin:0;font-size:12px"><input type="checkbox" data-bgi="${x.id}"${x.ex?"":" checked"}> In slideshow</label><input type="number" data-bgd="${x.id}" min="3" max="3600" style="width:78px;padding:4px" value="${x.dur||""}" placeholder="${S.ssSec} s" aria-label="Seconds for ${n}"></div>`}).join("")}
 function bgUI(){rk=kind();const cur=LIB.find(x=>x.id==S.bgid),mp=S.bgmap&&typeof S.bgmap=="object"?S.bgmap:{},mapped=mp[S.th]!==undefined,so=[["new","Newest first"],["recent","Recently used"],["fav","Favorites only"]];
@@ -2249,7 +2260,7 @@ function extraUI(){const h=t=>`<h3 style="font-size:15px;margin:16px 0 0">${t}</
  +h("Cursor")+sel("cur","Cursor trail",[["off","Off"],...Object.keys(SY).map(f=>[f,cap(f)])])+ck("pop","Pop on click")
  +h("Sounds")+ck("snd","Sound effects (off by default)")+rg("vol","Volume (%)",0,100,5)+'<div class="acts"><button class="sm sec" data-a="tsnd">Test sounds</button></div>'}
 /* ---- page identity ---- */
-function ident(){const t=(S.pt||"").trim()||"Playlist Remixer";document.title=t;const h=document.querySelector("main h1");
+function ident(){const t=(S.pt||"").trim()||"Playlist Remixer";window.__prBase=t;document.title=window.__prSec?window.__prSec+" – "+t:t;const h=document.querySelector("main h1");
  if(h){h.textContent=(S.pimg?"":(S.pi||"")+" ")+t;if(S.pimg){const i=document.createElement("img");i.src=S.pimg;i.alt="";i.style.cssText="height:1em;width:auto;vertical-align:-.12em;margin-right:.4em";h.prepend(i)}}
  document.querySelectorAll("link[rel~=icon]").forEach(l=>l.remove());const l=document.createElement("link");l.rel="icon";
  l.href=S.pimg||"data:image/svg+xml,"+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${esc(S.pi||"🎧")}</text></svg>`);document.head.appendChild(l)}
@@ -2524,12 +2535,12 @@ async function importAll(file){
   if(file.size>MAX*1.5+1048576)throw new Error("that file is larger than this app creates ("+mb(file.size)+")");
   let d;try{d=JSON.parse(await file.text())}catch(e){throw new Error("it is not a JSON file")}
   if(!d||d.app!==APP||d.v!==1||!Array.isArray(d.media))throw new Error("it is not a complete appearance backup from Playlist Remixer");
-  const media=d.media.filter(x=>x&&x.meta&&typeof x.meta.id==="string"&&OKT.includes(x.type)&&typeof x.data==="string");
+  const media=d.media.filter(x=>x&&x.meta&&typeof x.meta.id==="string"&&/^[\w.:-]{1,80}$/.test(x.meta.id)&&OKT.includes(x.type)&&typeof x.data==="string");
   if(!confirm("Restore appearance from this backup?\n\n• Your current appearance settings and saved looks are replaced (a safety copy is kept in this browser).\n• "+media.length+" background file"+(media.length===1?"":"s")+" will be added; existing ones are never overwritten.\n\nThe page reloads afterwards."))return;
   /* 1. media first (additive). If this fails nothing else has changed. */
   let added=0;
   if(media.length){const db=await idb(),have=new Set(await req(db.transaction("lib").objectStore("lib").getAllKeys()));
-   for(const x of media){if(have.has(x.meta.id))continue;const blob=unb64(x.data,x.type),m={...x.meta,type:x.type,size:blob.size};
+   for(const x of media){if(have.has(x.meta.id))continue;const blob=unb64(x.data,x.type),m={...x.meta,type:x.type,size:blob.size};m.th=/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]{0,60000}$/.test(m.th||"")?m.th:"";m.name=String(m.name||"Background").slice(0,60);if(m.dur!=null&&!(+m.dur>0))delete m.dur;if(m.cat!=null)m.cat=String(m.cat).slice(0,40);
     await new Promise((res,rej)=>{const t=db.transaction(["lib","blobs"],"readwrite");t.objectStore("lib").put(m);t.objectStore("blobs").put(blob,m.id);t.oncomplete=res;t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)});added++}}
   /* 2. settings, with a safety copy of what is there now */
   KEYS.forEach((k,i)=>{const cur=get(k);if(cur!=null)try{localStorage.setItem(k+":before-restore",cur)}catch(e){}
@@ -2610,13 +2621,13 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
    if(!turnstileToken){status.textContent="Complete the human verification before submitting.";return}
    btn.disabled=true;status.textContent="Sending…";
    try{
-    const userId=await ensureUser();
-    const r=await fetch(API+"/api/tickets",{
-     method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},
-     body:JSON.stringify({userId,subject,message,turnstileToken})
-    });
+    let userId=await ensureUser();
+    const send=id=>fetch(API+"/api/tickets",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({userId:id,subject,message,turnstileToken})});
+    let r=await send(userId);
+    if(r.status===404){try{localStorage.removeItem(USER_KEY)}catch(e){}userId=await ensureUser();r=await send(userId)}
     const d=await r.json().catch(()=>({}));
     if(!r.ok||!d.success){
+     if(r.status===429){const ra=+(r.headers&&r.headers.get("Retry-After"));throw new Error("You’re sending requests too quickly. Please wait "+(ra>0?Math.ceil(ra)+" seconds":"a minute")+" and try again.")}
      const code=d.code?" ["+d.code+"]":" (HTTP "+r.status+")";
      const trace=d.requestId?" Reference: "+d.requestId:"";
      throw new Error((d.error||"The support request could not be sent.")+code+trace);
@@ -2633,7 +2644,7 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
   try{
    const body={message:String(message||"Unknown application error").slice(0,1500),type:String(type||"application").slice(0,80),page:location.pathname.slice(0,200)};
    const id=getUserId();if(id)body.userId=id;
-   await fetch(API+"/api/errors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});
+   const res=await fetch(API+"/api/errors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});if(res&&res.status===404){try{localStorage.removeItem(USER_KEY)}catch(e){}}
   }catch(e){/* Reporting must never interfere with the app. */}
  }
  let reportCount=0,lastReport=0;
@@ -2783,22 +2794,66 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  <p class="hint" style="margin:0 0 8px"><b>Works from a file, offline:</b> importing, library, playlist tools, duplicates, insights, backups and restores, appearance, backgrounds and effects.<br><b>Needs a web address:</b> signing in to Spotify, Apple Music or YouTube. Apple Music also needs a small token service you host; no private keys ever go in this page.</p>
  <h3 style="font-size:15px;margin:12px 0 4px">Storage</h3><p style="margin:0">Library storage: <b>${st}</b>. Spotify’s sign-in is kept in this browser tab’s session storage (removed when the tab closes or you press Disconnect). YouTube’s sign-in is held in memory only. Apple Music’s developer token and sign-in are held in memory by this app; Apple’s MusicKit script may keep its own sign-in record in the browser.</p>`}
 
- function show(v,focus){if(v==="appearance"){const more=g("sn-more");if(more)more.open=false;const f=g("fab");if(f)f.click();return}
-  if(!VALID.has(v))v="home";cur=v;
+ function show(v,focus,push){if(v==="appearance"){const more=g("sn-more");if(more)more.open=false;const f=g("fab");if(f)f.click();return}
+  if(!VALID.has(v))v="home";cur=v;if(v!=="games"&&window.PRGames)PRGames.stop();const lab=(PRIMARY.concat(EXTRA).find(x=>x[0]===v)||[])[1];window.__prSec=v==="home"?"":(lab||"");document.title=(window.__prSec?window.__prSec+" – ":"")+(window.__prBase||"Playlist Remixer");
   document.querySelectorAll("[data-views]").forEach(e=>{const l=e.dataset.views.split(" ");e.hidden=!l.includes(v)});
-  const primary=v==="sync"||v==="insights"||v==="history"||v==="backups"||v==="settings"||v==="games"?"more":v;
+  const primary=EXTRA.some(x=>x[0]===v)?"more":v;
   nav.querySelectorAll("button[data-go]").forEach(b=>{if(b.dataset.go===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
   const more=g("sn-more");if(more){more.classList.toggle("more-active",primary==="more");if(primary==="more")more.open=true;else more.open=false;}
   if(v==="home")homeDraw();if(v==="games"&&window.PRGames)PRGames.draw();if(v==="mymusic")libDraw();if(v==="backups"||v==="settings")infoDraw();
-  try{if(location.hash!=="#"+v)history.replaceState(null,"","#"+v)}catch(e){}
+  try{if(location.hash!=="#"+v){if(push)history.pushState(null,"","#"+v);else history.replaceState(null,"","#"+v)}}catch(e){}
   if(focus){const h=document.querySelector('[data-views~="'+v+'"] h2');if(h){h.tabIndex=-1;h.focus({preventScroll:true})}}
   window.scrollTo(0,0)}
- document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-go]");if(b)show(b.dataset.go,true)});
- window.addEventListener("hashchange",()=>show((location.hash||"#home").slice(1)));
+ document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-go]");if(b)show(b.dataset.go,true,true)});
+ const route=()=>{const v=(location.hash||"#home").slice(1);if(v!==cur||!VALID.has(v))show(v,true)};window.addEventListener("hashchange",route);window.addEventListener("popstate",route);
  window.addEventListener("online",()=>cur==="home"&&homeDraw());window.addEventListener("offline",()=>cur==="home"&&homeDraw());
  document.addEventListener("plremix:libready",()=>{if(cur==="home")homeDraw();if(cur==="mymusic")libDraw()});
  document.addEventListener("plremix:libchanged",()=>{if(cur==="home")homeDraw();if(cur==="mymusic")libDraw()});
  window.PLXNAV={show,current:()=>cur};show((location.hash||"#home").slice(1));
+})();
+</script>
+<style>
+@media print{
+ #sn,#fab,#ov,#dr,.acts,button,input[type=file],select,textarea,summary,#pr-persist-btn{display:none!important}
+ html,body{background:#fff!important;color:#000!important}
+ .card{box-shadow:none!important;border:1px solid #bbb!important;break-inside:avoid;background:#fff!important;color:#000!important}
+ .hint{color:#444!important}
+}
+@media (forced-colors:active){
+ button,select,input,textarea,.pill,.card{border:1px solid ButtonText}
+ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid Highlight;outline-offset:2px}
+ .gm-opts button.right,.gm-keys button.right,.gm-mem button.ok,.gm-ord button.ok{border:3px solid Highlight}
+ .gm-pad.lit,.gm-tapzone.beat{outline:3px solid Highlight}
+}
+@media (prefers-contrast:more){:root{--mu:var(--tx);--bd:var(--tx)}}
+.pr-drop{outline:3px dashed var(--ac);outline-offset:4px;background:var(--ac2)}
+</style>
+<script>
+/* Polish: drag-and-drop import onto the Import card, and a request that the browser keeps this site's data. */
+(function(){
+const $=id=>document.getElementById(id),st=navigator.storage;
+/* ---- keep my data ---- */
+async function refresh(){const p=$("pr-persist"),b=$("pr-persist-btn");if(!p)return;
+ if(!st||!st.persisted){p.textContent="This browser has no way to protect stored data from automatic cleanup, so download a backup regularly.";if(b)b.hidden=true;return}
+ let on=false,est="";try{on=await st.persisted()}catch(e){}
+ try{if(st.estimate){const e=await st.estimate();if(e&&e.usage!=null)est=" Using about "+(e.usage/1048576).toFixed(1)+" MB"+(e.quota?" of roughly "+Math.round(e.quota/1048576)+" MB available":"")+"."}}catch(e){}
+ p.textContent=(on?"Your browser has marked this site's data as protected from automatic cleanup.":"Your browser may clear this site's data if it runs low on space. Download a backup regularly, or ask the browser to protect it.")+est;
+ if(b)b.hidden=on||!st.persist}
+async function ask(){if(!st||!st.persist)return false;try{return await st.persist()}catch(e){return false}}
+const btn=$("pr-persist-btn");if(btn)btn.addEventListener("click",async()=>{btn.disabled=true;const ok=await ask();await refresh();btn.disabled=false;
+ if(!ok&&$("pr-persist"))$("pr-persist").textContent+=" The browser did not grant it. Some browsers decide based on how often you use the site, so keep a backup file."});
+let tried=false;document.addEventListener("plremix:libchanged",()=>{if(tried)return;tried=true;if(st&&st.persisted&&st.persist)st.persisted().then(on=>{if(!on)return ask().then(refresh)}).catch(()=>{})});
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-go=backups]"))setTimeout(refresh,60)});
+window.addEventListener("hashchange",()=>{if((location.hash||"").slice(1)==="backups")refresh()});refresh();
+/* ---- drag and drop ---- */
+const fi=$("file"),zone=$("c-im"),has=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes("Files"),inFile=e=>e.target.closest&&e.target.closest("input[type=file]");
+document.addEventListener("dragover",e=>{if(!has(e)||inFile(e))return;e.preventDefault();const z=e.target.closest&&e.target.closest("#c-im");if(zone)zone.classList.toggle("pr-drop",!!z);e.dataTransfer.dropEffect=z?"copy":"none"});
+document.addEventListener("dragleave",e=>{if(e.relatedTarget==null&&zone)zone.classList.remove("pr-drop")});
+document.addEventListener("drop",e=>{if(!has(e)||inFile(e))return;e.preventDefault();if(zone)zone.classList.remove("pr-drop");
+ if(!(e.target.closest&&e.target.closest("#c-im"))||!fi)return;const s=$("stat"),ok=[...e.dataTransfer.files].filter(f=>/\.(csv|json|txt|tsv)$/i.test(f.name));
+ if(!ok.length){if(s)s.textContent="Drop CSV, JSON, TXT or TSV files onto this card to import them.";return}
+ try{const dt=new DataTransfer();ok.forEach(f=>dt.items.add(f));fi.files=dt.files;fi.dispatchEvent(new Event("change",{bubbles:true}))}
+ catch(err){if(s)s.textContent="This browser can't accept dropped files here. Use the file picker instead."}});
 })();
 </script>
 <style>
@@ -3117,7 +3172,7 @@ const TV={
 "Latin America":["Who led the Haitian Revolution against French rule?|Toussaint Louverture|Simón Bolívar|José de San Martín|Miguel Hidalgo","What was the capital of the Inca Empire?|Cusco|Machu Picchu|Tenochtitlan|Quito","Who launched Mexico's independence movement with the 1810 Grito de Dolores?|Miguel Hidalgo|Benito Juárez|Pancho Villa|Emiliano Zapata","In which year did the Panama Canal open?|1914|1869|1903|1930"],
 "Modern History":["In which year was the Maastricht Treaty signed, creating the European Union?|1992|1985|1999|2004","In which year did the September 11 attacks occur?|2001|1999|2003|2005","The 1998 Good Friday Agreement concerned which region?|Northern Ireland|Cyprus|Kosovo|Bosnia","In which year did euro banknotes and coins enter circulation?|2002|1999|2004|1995"]};
 const TVK="plremix:games-tv";let tvCat="";
-function tvAdd(txt){let n=0;String(txt).split("\n").forEach(l=>{const p=l.split("|").map(x=>x.trim());if(p.length===6&&p.every(Boolean)){(TV[p[0]]=TV[p[0]]||[]).push(p.slice(1).join("|"));n++}});return n}
+function tvAdd(txt){let n=0;String(txt).split("\n").forEach(l=>{const p=l.split("|").map(x=>x.trim());if(p.length===6&&p.every(Boolean)){const line=p.slice(1).join("|");if(!(TV[p[0]]||[]).includes(line)){(TV[p[0]]=TV[p[0]]||[]).push(line);n++}}});return n}
 try{tvAdd(localStorage.getItem(TVK)||"")}catch(e){}
 const tvCount=()=>Object.values(TV).reduce((a,x)=>a+x.length,0);
 function tvMenu(){stop();const cats=Object.keys(TV);shell("History trivia","",`<p class="hint">${tvCount()} questions in ${cats.length} categories. Each game asks 10.</p><div class="acts"><label for="gm-cat">Category</label><select id="gm-cat"><option value="">All categories</option>${cats.map(c=>`<option value="${E(c)}">${E(c)} (${TV[c].length})</option>`).join("")}</select><button type="button" data-gm="tvgo">Play 10 questions</button></div>
@@ -3133,7 +3188,8 @@ document.addEventListener("keydown",e=>{const v=$("v-games");if(!v||v.hidden||!S
  if(e.code==="Space"||e.code==="Enter"){e.preventDefault();tapHit()}});
 document.addEventListener("keydown",e=>{const v=$("v-games");if(!v||v.hidden||!S||S.g!=="hm"||S.locked||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;const t=e.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;if(/^Key[A-Z]$/.test(e.code))hmGuess(e.code.slice(3))});
 window.addEventListener("hashchange",()=>{if((location.hash||"").slice(1)!=="games")stop()});
-window.PRGames={draw:hub,stop};
+function reload(){try{const b=JSON.parse(localStorage.getItem(KEY)||"{}");for(const k in best)best[k]=+b[k]>0?+b[k]:0}catch(e){}try{tvAdd(localStorage.getItem(TVK)||"")}catch(e){}}
+window.PRGames={draw:hub,stop,reload};
 if((location.hash||"").slice(1)==="games")hub();
 })();
 </script>
