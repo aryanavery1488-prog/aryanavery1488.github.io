@@ -151,11 +151,15 @@ body{padding-left:208px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ok:#4ccf84;--warn:#f2a65a}}
 :root[data-theme="dark"]{--ok:#4ccf84;--warn:#f2a65a}
 main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
+
+.skip{position:fixed;left:8px;top:-90px;z-index:3000;padding:10px 16px;border-radius:8px;background:var(--ac);color:var(--on,#fff);font-weight:700;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.35)}.skip:focus{top:8px}main:focus{outline:0}
+@media (prefers-contrast:more){body.camo{background-image:none!important}}
 </style>
 </head>
 <body>
+<a href="#main" class="skip" id="skip">Skip to main content</a>
 <noscript><div style="padding:16px;margin:12px;border:2px solid #b00;border-radius:8px;font:16px system-ui,sans-serif;background:#fff;color:#000">Playlist Remixer needs JavaScript to run. Please turn it on in your browser settings and reload this page.</div></noscript>
-<main>
+<main id="main" tabindex="-1">
 <h1>🎧 Playlist Remixer</h1>
 <p class="sub" data-views="home">Import playlists from supported music services, organize your local music library, and build smarter playlists with the metadata you already have.</p>
 
@@ -185,6 +189,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <section class="card vw" id="v-support" data-views="support" aria-labelledby="support-h">
 <h2 id="support-h">Support</h2>
 <p class="hint" style="margin-top:0">Send a support request to the Playlist Remixer team. Your message and a random browser ID will be stored. To help diagnose issues, we also record your IP address, browser/device user-agent, and approximate location with the ticket. Approximate location is provided by Cloudflare and is not GPS. Include an email address or Discord username in your message if you want a reply.</p>
+<label style="display:flex;gap:8px;align-items:flex-start;margin:10px 0;font-size:13px"><input type="checkbox" id="pr-err-optin" style="margin-top:3px"><span><b>Send anonymous error reports</b> (off by default). When on, if the app hits an error, its message text and the page name are sent to the Playlist Remixer team, with your random browser ID if you have sent a support request before. Your library is never sent on purpose, but an error message can occasionally quote a few characters of the data that caused it. Turn this off any time.</span></label>
 <form id="pr-support-form">
 <label for="pr-support-subject">Subject</label><input id="pr-support-subject" type="text" maxlength="150" required placeholder="What do you need help with?">
 <label for="pr-support-message" style="margin-top:10px">Message</label><textarea id="pr-support-message" maxlength="5000" required placeholder="Describe the problem and what you expected to happen."></textarea>
@@ -959,7 +964,9 @@ $("file").onchange=async e=>{
  if(fl.length>1)$("stat").textContent=msg.join(" • ");
  e.target.value="";
 };
-$("clr").onclick=()=>{if(!lib.length){$("stat").textContent="The library is already empty.";return}if(typeof confirm=="function"&&!confirm("Erase all "+lib.length+" saved entries from this browser? This can’t be undone."))return;const pl0=lib,pd0=decSnap(),pu0=UND;lib=[];sep=new Set();join=new Set();ovr={};part={};alias={};rej=new Set();aka={};skipT=new Set();defer=new Set();UND=null;if(!save()){lib=pl0;decLoad(pd0);UND=pu0;chips();$("stat").textContent="Your browser wouldn’t save the cleared library, so nothing was erased.";return}chips();$("out").innerHTML="";document.dispatchEvent(new Event("plremix:libchanged"));$("stat").textContent="Library cleared."};
+$("clr").onclick=async()=>{if(!lib.length){$("stat").textContent="The library is already empty.";return}if(typeof confirm=="function"&&!confirm("Erase all "+lib.length+" saved entries from this browser? This can’t be undone."))return;const pl0=lib,pd0=decSnap(),pu0=UND;lib=[];sep=new Set();join=new Set();ovr={};part={};alias={};rej=new Set();aka={};skipT=new Set();defer=new Set();UND=null;if(!save()){lib=pl0;decLoad(pd0);UND=pu0;chips();$("stat").textContent="Your browser wouldn’t save the cleared library, so nothing was erased.";return}
+ if(PERSIST.mode==="idb"){$("stat").textContent="Clearing…";await libIdle();if(PERSIST.err){PERSIST.pending=null;PERSIST.err=null;lib=pl0;decLoad(pd0);UND=pu0;chips();$("stat").textContent="Your browser couldn’t save the cleared library, so nothing was erased.";return}}
+ chips();$("out").innerHTML="";document.dispatchEvent(new Event("plremix:libchanged"));$("stat").textContent="Library cleared."};
 $("demo").onclick=()=>{
  const d=[["Spotify","Chill","Tame Impala","The Less I Know The Better"],["Spotify","Chill","Tame Impala","Let It Happen"],["Spotify","Chill","Khruangbin","Maria También"],["Spotify","Chill","Men I Trust","Show Me How"],["Spotify","Workout","Daft Punk","Harder Better Faster Stronger"],["Spotify","Workout","Calvin Harris","Feel So Close"],["Spotify","Workout","The Weeknd","Blinding Lights"],
  ["Apple Music","Favorites","Tame Impala","The Less I Know The Better"],["Apple Music","Favorites","Daft Punk","Digital Love"],["Apple Music","Favorites","Daft Punk","Get Lucky"],["Apple Music","Favorites","Phoenix","1901"],["Apple Music","Favorites","The Weeknd","Blinding Lights"],
@@ -2058,7 +2065,7 @@ D.addEventListener&&D.addEventListener("DOMContentLoaded",draw);
 </script>
 <div id="ml" aria-hidden="true"></div><div id="mc" hidden><div id="mb" role="status" aria-live="polite" hidden></div><button type="button" class="mcb" id="mcb" aria-label="Your buddy. Show a message."></button></div><canvas id="fx" aria-hidden="true"></canvas><canvas id="cf" aria-hidden="true"></canvas>
 <button type="button" id="fab" aria-label="Customize appearance" title="Customize">🎨</button><button type="button" id="bkp">Back to page</button>
-<div id="ov"></div><aside id="dr" role="dialog" aria-modal="true" aria-label="Customize appearance"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">🎨 Customize</h2><button type="button" class="sec sm" id="dx" aria-label="Close customization">✕</button></div><div class="tabs" role="tablist"></div><div id="db"></div><input type="file" id="imf" accept=".json" hidden><input type="file" id="bgf" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden></aside>
+<div id="ov"></div><aside id="dr" role="dialog" aria-modal="true" aria-label="Customize appearance"><div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">🎨 Customize</h2><button type="button" class="sec sm" id="dx" aria-label="Close customization">✕</button></div><div class="tabs" role="tablist"></div><div id="db" role="tabpanel"></div><input type="file" id="imf" accept=".json" hidden><input type="file" id="bgf" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" hidden></aside>
 <script>
 (()=>{
 const $=id=>document.getElementById(id),R=document.documentElement,B=document.body,KEY="plremix:look";
@@ -2074,6 +2081,66 @@ lavender:G("Lavender","#ece6ff","#ffffff","#33264f","#6b42d6",["#ece6ff","#d9ccf
 cyber:G("Cyber","#12062a","#1b0a3a","#e8fbff","#00e5ff",["#12062a","#2b0a5e","#0a3a5e"],"stars")};
 const GR=[["Standard",["system","light","dark","midnight","oled","hc"]],["Animated",["sakura","candy","cloud","ocean","forest","nether","void","sunset","terminal"]],["Cozy",["matcha","peach","lavender","mocha","cyber"]]];
 const NM={system:"System",light:"Light",dark:"Dark"},ACC=["#1f6f5c","#2e9e5b","#1f6fd0","#6b42d6","#b83272","#e0527a","#e0643c","#d4a017","#00a6b8","#ff8fb8"];
+/* ===== Military camo themes (the "Military" group) =====
+   Each pattern is drawn once on a canvas as a seamless tile with a seeded random generator, so a theme always looks the
+   same and nothing is downloaded. They reproduce the look and colourways of the classic patterns; they are not scans of the
+   official designs ("MARPAT-style", "Multicam-style" etc. are descriptive only). A darkening overlay keeps page text at 4.5:1+
+   contrast against every colour in the pattern. */
+const prng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const wrapDraw=(n,f)=>{for(const dx of[-n,0,n])for(const dy of[-n,0,n])f(dx,dy)};
+function mkBlob(r,n,rmin,rmax,o){const rad=rmin+(rmax-rmin)*r(),k=12+Math.floor(r()*9),rough=o.rough==null?.38:o.rough,pts=[];for(let i=0;i<k;i++)pts.push(1-rough+rough*2*r());return{cx:r()*n,cy:r()*n,r:rad,k,pts,ang:r()*Math.PI,el:o.el?1+r()*(o.el-1):1}}
+function fillBlob(x,b,dx,dy){const{k,pts,r,el}=b,ca=Math.cos(b.ang),sa=Math.sin(b.ang),P=[];for(let i=0;i<k;i++){const a=i/k*6.2832,rr=r*pts[i],px=Math.cos(a)*rr*el,py=Math.sin(a)*rr;P.push([b.cx+dx+px*ca-py*sa,b.cy+dy+px*sa+py*ca])}
+ const mid=(p,q)=>[(p[0]+q[0])/2,(p[1]+q[1])/2],m0=mid(P[k-1],P[0]);x.beginPath();x.moveTo(m0[0],m0[1]);for(let i=0;i<k;i++){const m=mid(P[i],P[(i+1)%k]);x.quadraticCurveTo(P[i][0],P[i][1],m[0],m[1])}x.closePath();x.fill()}
+const offTile=(b,dx,dy,n)=>{const e=b.r*b.el*1.1;return b.cx+dx+e<0||b.cx+dx-e>n||b.cy+dy+e<0||b.cy+dy-e>n};
+function blobs(x,n,r,color,count,rmin,rmax,o){o=o||{};x.fillStyle=color;for(let i=0;i<count;i++){const b=mkBlob(r,n,rmin,rmax,o);wrapDraw(n,(dx,dy)=>{if(!offTile(b,dx,dy,n))fillBlob(x,b,dx,dy)})}}
+/* soft-edged layer: a faint larger halo under the solid shape (used by the Multicam-style pattern) */
+function softBlobs(x,n,r,color,count,rmin,rmax,o){o=o||{};for(let i=0;i<count;i++){const b=mkBlob(r,n,rmin,rmax,o);wrapDraw(n,(dx,dy)=>{if(offTile(b,dx,dy,n))return;x.fillStyle=color;x.globalAlpha=.35;const h=Object.assign({},b,{r:b.r*1.2});fillBlob(x,h,dx,dy);x.globalAlpha=.92;fillBlob(x,b,dx,dy);x.globalAlpha=1})}}
+function chips(x,n,r,color,count,rmin,rmax){x.fillStyle=color;for(let i=0;i<count;i++){const cx=r()*n,cy=r()*n,rad=rmin+(rmax-rmin)*r(),k=5+Math.floor(r()*3),a0=r()*6.28,rs=[];for(let j=0;j<k;j++)rs.push(.55+.45*r());
+ wrapDraw(n,(dx,dy)=>{if(cx+dx+rad<0||cx+dx-rad>n||cy+dy+rad<0||cy+dy-rad>n)return;x.beginPath();for(let j=0;j<k;j++){const a=a0+j/k*6.2832,px=cx+dx+Math.cos(a)*rad*rs[j]*1.5,py=cy+dy+Math.sin(a)*rad*rs[j];j?x.lineTo(px,py):x.moveTo(px,py)}x.closePath();x.fill()})}}
+/* tapering, jagged brush strokes for Tigerstripe */
+function strokes(x,n,r,color,count,len0,len1,w0,w1,ang0,spread){x.fillStyle=color;for(let i=0;i<count;i++){const cx=r()*n,cy=r()*n,len=len0+(len1-len0)*r(),W=w0+(w1-w0)*r(),a=ang0+(r()-.5)*spread,seg=9,dxv=Math.cos(a),dyv=Math.sin(a),nx=-dyv,ny=dxv,L=[],Rr=[];let wob=0;
+  for(let s=0;s<=seg;s++){const t=s/seg;wob+=(r()-.5)*W*1.1;const hw=W*Math.pow(Math.sin(Math.PI*t),.65)*(.55+r()*.9)/2,px=cx+dxv*(t-.5)*len+nx*wob,py=cy+dyv*(t-.5)*len+ny*wob;L.push([px+nx*hw,py+ny*hw]);Rr.push([px-nx*hw,py-ny*hw])}
+  const ext=len/2+W*2;wrapDraw(n,(dx,dy)=>{if(cx+dx+ext<0||cx+dx-ext>n||cy+dy+ext<0||cy+dy-ext>n)return;x.beginPath();L.forEach((p,j)=>j?x.lineTo(p[0]+dx,p[1]+dy):x.moveTo(p[0]+dx,p[1]+dy));for(let j=Rr.length-1;j>=0;j--)x.lineTo(Rr[j][0]+dx,Rr[j][1]+dy);x.closePath();x.fill()})}}
+/* pixelated pattern: tileable multi-scale value noise, quantised to the palette by proportion (balanced colours), plus scattered single pixels */
+function digital(x,n,cell,pal,prop,r,s){const g=Math.floor(n/cell),s1=s[0],s2=s[1],s3=s[2],lat=z=>Array.from({length:z*z},()=>r()),A=lat(s1),B=lat(s2),C=lat(s3),sm=t=>t*t*(3-2*t);
+ const ns=(a,z,u,v)=>{u*=z;v*=z;const i=Math.floor(u),j=Math.floor(v),fu=sm(u-i),fv=sm(v-j),G=(ii,jj)=>a[(((jj%z)+z)%z)*z+(((ii%z)+z)%z)];return G(i,j)*(1-fu)*(1-fv)+G(i+1,j)*fu*(1-fv)+G(i,j+1)*(1-fu)*fv+G(i+1,j+1)*fu*fv};
+ const vals=[];for(let j=0;j<g;j++)for(let i=0;i<g;i++){const u=i/g,v=j/g;vals.push(.5*ns(A,s1,u,v)+.3*ns(B,s2,u,v)+.2*ns(C,s3,u,v)+(r()-.5)*.05)}
+ const sorted=vals.slice().sort((a,b)=>a-b),cuts=[];let acc=0;for(let q=0;q<pal.length-1;q++){acc+=prop[q];cuts.push(sorted[Math.min(sorted.length-1,Math.floor(acc*sorted.length))])}
+ for(let j=0;j<g;j++)for(let i=0;i<g;i++){const v=vals[j*g+i];let idx=0;while(idx<cuts.length&&v>=cuts[idx])idx++;if(r()<.07)idx=Math.max(0,Math.min(pal.length-1,idx+(r()<.5?-1:1)));x.fillStyle=pal[idx];x.fillRect(i*cell,j*cell,cell,cell)}}
+const fillAll=(x,n,c)=>{x.fillStyle=c;x.fillRect(0,0,n,n)};
+const CAMO_MAKE={
+ woodland:{n:512,seed:81,make(x,n,r){fillAll(x,n,"#7a8556");blobs(x,n,r,"#5a4630",20,38,82,{el:1.8});blobs(x,n,r,"#34442a",24,26,62,{el:1.6});blobs(x,n,r,"#98986a",10,8,20,{});blobs(x,n,r,"#1b1913",18,10,34,{el:2.2,rough:.45})}},
+ digiwood:{n:512,seed:2,px:1,make(x,n,r){digital(x,n,8,["#1d1b15","#3a5530","#73854a","#8a7248"],[.18,.30,.32],r,[5,11,23])}},
+ digidesert:{n:512,seed:3,px:1,make(x,n,r){digital(x,n,8,["#6a5434","#9a825a","#bda57a","#d8c79f"],[.16,.28,.32],r,[5,11,23])}},
+ ucp:{n:512,seed:4,px:1,make(x,n,r){digital(x,n,8,["#5f6157","#7f8270","#a29f86","#bdb597"],[.2,.3,.3],r,[4,9,19])}},
+ multi:{n:576,seed:5,make(x,n,r){fillAll(x,n,"#b2a47a");softBlobs(x,n,r,"#8e9068",26,40,95,{el:2});softBlobs(x,n,r,"#6f5b3e",22,30,75,{el:1.8});softBlobs(x,n,r,"#5d6845",22,22,60,{el:1.7});softBlobs(x,n,r,"#cbbd93",14,14,35,{});softBlobs(x,n,r,"#3e3425",24,8,22,{el:1.6})}},
+ tiger:{n:512,seed:6,make(x,n,r){fillAll(x,n,"#8a9660");const A=-Math.PI/2+.28;strokes(x,n,r,"#a08a55",70,70,170,8,20,A,.8);strokes(x,n,r,"#3b4c2b",80,60,150,7,18,A,.8);strokes(x,n,r,"#181610",60,45,120,4,11,A,.8)}},
+ flecktarn:{n:512,seed:7,make(x,n,r){fillAll(x,n,"#6f7f45");blobs(x,n,r,"#5b4429",260,6,15,{el:1.4,rough:.5});blobs(x,n,r,"#2f4025",260,6,15,{el:1.4,rough:.5});blobs(x,n,r,"#a09258",120,5,12,{el:1.3,rough:.5});blobs(x,n,r,"#181711",120,4,10,{el:1.3,rough:.5})}},
+ choc:{n:512,seed:8,make(x,n,r){fillAll(x,n,"#c9b88c");blobs(x,n,r,"#dccfa6",22,30,70,{el:1.7});blobs(x,n,r,"#a9aa7c",18,25,60,{el:1.6});blobs(x,n,r,"#9b8358",20,25,60,{el:1.6});blobs(x,n,r,"#5b4331",20,25,60,{el:1.7});chips(x,n,r,"#33261b",90,5,12)}},
+ arctic:{n:512,seed:9,px:1,make(x,n,r){digital(x,n,8,["#8e9aa2","#b3bcc2","#d6dcdf","#f1f3f4"],[.18,.28,.30],r,[5,11,23])}},
+ navy:{n:512,seed:10,px:1,make(x,n,r){digital(x,n,8,["#0f1f36","#213d62","#3f5f8a","#7090b8"],[.25,.30,.28],r,[5,11,23])}},
+ urban:{n:512,seed:11,px:1,make(x,n,r){digital(x,n,8,["#0a0a0a","#1d1d1d","#343434","#555555"],[.25,.30,.28],r,[5,11,23])}}};
+
+const CM=(n,bg,card,tx,ac,camo,dim,ovl)=>({n,bg,card,tx,ac,camo,dim,ovl:ovl||"0,0,0"});
+/* bg = the pattern's base colour after the overlay; dim = overlay strength chosen so tx keeps >= 4.6:1 against EVERY colour in the pattern */
+const CAMO_THEMES={c_m81:CM("Woodland (M81)","#535a3a","#1e2417","#ece8d2","#d9b25c","woodland",.32),
+c_digiwood:CM("Digital Woodland (MARPAT-style)","#181611","#1b2417","#e6ebd6","#c9b36a","digiwood",.18),
+c_digidesert:CM("Digital Desert (MARPAT-style)","#372c1b","#2d2418","#f3e9d0","#e0b765","digidesert",.48),
+c_ucp:CM("Grey-Green Digital (ACU-style)","#353631","#26292a","#e9e9e0","#b9c27a","ucp",.44),
+c_multi:CM("Multi-terrain (Multicam-style)","#605942","#2a281d","#efe9d6","#c9a24e","multi",.46),
+c_tiger:CM("Tigerstripe","#636c45","#1c2214","#ecebd3","#e0b04a","tiger",.28),
+c_fleck:CM("Flecktarn","#4e5930","#1d2315","#e9ecd8","#cdb25b","flecktarn",.30),
+c_choc:CM("Desert Chocolate Chip","#655c46","#2c2217","#f6ecd3","#e2b66b","choc",.50),
+c_arctic:CM("Arctic Digital","#dfe5e8","#ffffff","#1d262c","#2f5f87","arctic",0),
+c_navy:CM("Navy Blue Digital (NWU-style)","#0b1728","#0f1b2d","#e4ecf6","#7fb2e5","navy",.26),
+c_urban:CM("Urban Night Digital","#0a0a0a","#0b0b0b","#e8e8e8","#9fb3c8","urban",0)};
+Object.assign(T,CAMO_THEMES);GR.push(["Military",Object.keys(CAMO_THEMES)]);
+const CAMO_URL=new Map();
+function camoTile(id){if(CAMO_URL.has(id))return CAMO_URL.get(id);const d=CAMO_MAKE[id];let url=null;
+ try{const c=document.createElement("canvas");c.width=c.height=d.n;const x=c.getContext&&c.getContext("2d");if(x){d.make(x,d.n,prng(d.seed||1));const u=c.toDataURL("image/png");if(typeof u==="string"&&u.indexOf("data:image/")===0)url=u}}catch(e){url=null}
+ CAMO_URL.set(id,url);return url}
+function camoApply(t){const url=camoTile(t.camo);if(!url)return;const d=CAMO_MAKE[t.camo],dim=t.dim>0,ov=dim?`linear-gradient(rgba(${t.ovl},${t.dim}),rgba(${t.ovl},${t.dim})),`:"";
+ B.style.backgroundImage=ov+`url(${url})`;B.classList.add("camo");B.style.backgroundSize=(dim?"auto,":"")+d.n+"px "+d.n+"px";B.style.backgroundRepeat=(dim?"no-repeat,":"")+"repeat";if(d.px)B.style.imageRendering="pixelated";B.classList.add("gs")}
 /* Offline: fonts are NOT downloaded. A named font is used only if it is already installed on the device; otherwise the matching system stack below is used. */
 const FSTACK={nunito:'"Nunito",ui-rounded,"Segoe UI",system-ui,sans-serif',lora:'"Lora",Georgia,"Times New Roman",serif',jb:'"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,Menlo,monospace',ps:'"Press Start 2P",ui-monospace,Consolas,monospace'};
 const FX=["off","snow","petals","embers","stars","bubbles","fireflies","hearts","code"],FONT={nunito:["Nunito","Nunito"],lora:["Lora","Lora"],jb:["JetBrains Mono","JetBrains+Mono"],ps:["Press Start 2P","Press+Start+2P"]};
@@ -2088,10 +2155,10 @@ const rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)),hx=a=>"#"+a.map(v=>Math.
 const mix=(a,b,t)=>{const x=rgb(a),y=rgb(b);return hx(x.map((v,i)=>v*t+y[i]*(1-t)))};
 const lum=h=>{const c=rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]},fg=h=>lum(h)>.179?"#111111":"#ffffff";
 const mq=matchMedia("(prefers-reduced-motion: reduce)"),nm=()=>mq.matches||!S.anim;
-function theme(){const st=R.style;["--bg","--card","--tx","--mu","--ac","--bd","--on","--ac2"].forEach(k=>st.removeProperty(k));R.removeAttribute("data-theme");B.classList.remove("gr","gs");B.style.backgroundImage="";st.colorScheme="";
+function theme(){const st=R.style;["--bg","--card","--tx","--mu","--ac","--bd","--on","--ac2"].forEach(k=>st.removeProperty(k));R.removeAttribute("data-theme");B.classList.remove("gr","gs","camo");B.style.backgroundImage="";B.style.backgroundSize="";B.style.backgroundRepeat="";B.style.imageRendering="";st.colorScheme="";
  const t=S.th=="custom"?S.cu:T[S.th];if(S.th=="light"||S.th=="dark")R.setAttribute("data-theme",S.th);
  if(t){st.setProperty("--bg",t.bg);st.setProperty("--card",t.card);st.setProperty("--tx",t.tx);st.setProperty("--mu",mix(t.tx,t.bg,.6));st.setProperty("--bd",S.th=="hc"?t.tx:mix(t.tx,t.bg,.2));st.setProperty("--ac",t.ac);st.colorScheme=lum(t.bg)<.3?"dark":"light";
-  if(t.gr){B.style.backgroundImage=`linear-gradient(135deg,${t.gr.join(",")})`;B.classList.add("gr")}}
+  if(t.gr){B.style.backgroundImage=`linear-gradient(135deg,${t.gr.join(",")})`;B.classList.add("gr")}else if(t.camo&&!S.cgOn)camoApply(t)}
  if(S.cgOn){const c=x=>okc(x)?x:"#888888";B.style.backgroundImage=`linear-gradient(${(+S.cga||0)%361}deg,${c(S.cc1)},${c(S.cc2)},${c(S.cc3)})`;B.classList.remove("gr");B.classList.add(S.cgan?"gr":"gs")}
  const ac=S.ac||(t&&t.ac);if(ac){st.setProperty("--ac",ac);st.setProperty("--on",fg(ac));st.setProperty("--ac2","color-mix(in srgb,var(--ac) 16%,var(--card))")}}
 let fl=null;
@@ -2187,7 +2254,11 @@ const sel=(k,l,o)=>`<label for="k_${k}">${l}</label><select id="k_${k}" data-k="
 const rg=(k,l,a,b,s)=>`<label for="k_${k}">${l}: <output>${S[k]}</output></label><input type="range" id="k_${k}" data-k="${k}" min="${a}" max="${b}" step="${s}" value="${S[k]}">`;
 const ck=(k,l)=>`<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-k="${k}"${S[k]?" checked":""}> ${l}</label>`;
 const cp=(k,l)=>`<span style="display:inline-block;margin-right:10px"><label for="c_${k}">${l}</label><input type="color" id="c_${k}" data-c="${k}" value="${S.cu[k]}"></span>`;
-function tab(){const tabs=[["t","Theme"],["l","Layout"],["f","Fun"]];dr.querySelector(".tabs").innerHTML=tabs.map(([k,n])=>`<button role="tab" aria-selected="${S.tab==k}" data-a="tab" data-v="${k}">${n}</button>`).join("");
+function tab(){const tabs=[["t","Theme"],["l","Layout"],["f","Fun"]];const ae=document.activeElement,hadTabFocus=!!(ae&&dr.contains(ae)&&ae.getAttribute&&ae.getAttribute("role")==="tab");
+ dr.querySelector(".tabs").innerHTML=tabs.map(([k,n])=>`<button role="tab" id="tab_${k}" aria-selected="${S.tab==k}" aria-controls="db" tabindex="${S.tab==k?0:-1}" data-a="tab" data-v="${k}">${n}</button>`).join("");
+ {const pnl=$("db");if(pnl)pnl.setAttribute("aria-labelledby","tab_"+S.tab)}
+ /* re-rendering replaces the buttons, so give focus back to the selected tab if a tab had it (keyboard users would otherwise be dropped) */
+ if(hadTabFocus){const st=dr.querySelector('[role="tab"][aria-selected="true"]');if(st)st.focus()}
  const cur=T[S.th]||{};let h="";
  if(S.tab=="t")h=`<label for="k_th">Theme</label><select id="k_th" data-k="th">${GR.map(([g,l])=>`<optgroup label="${g}">${l.map(i=>`<option value="${i}"${S.th==i?" selected":""}>${NM[i]||T[i].n}</option>`).join("")}</optgroup>`).join("")}<optgroup label="Custom"><option value="custom"${S.th=="custom"?" selected":""}>Custom colors</option></optgroup></select>
  <p class="hint" style="margin:10px 0 0">Custom colors (editing switches to Custom; muted text and borders are generated):</p>${cp("bg","Background")}${cp("card","Panel")}${cp("tx","Text")}${cp("ac","Accent")}<div class="acts" style="margin-top:8px"><button class="sm sec" data-a="rcu">Reset custom colors</button></div>
@@ -2210,6 +2281,7 @@ $("fab").onclick=open;$("dx").onclick=shut;ov.onclick=shut;addEventListener("key
  if(e.key=="Escape"){shut();return}
  if(e.key=="Tab"){const f=focusables();if(!f.length){e.preventDefault();return}const first=f[0],last=f[f.length-1],a=document.activeElement;
   if(!dr.contains(a)){e.preventDefault();first.focus()}else if(e.shiftKey&&a===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}}});
+dr.addEventListener("keydown",e=>{const b=e.target&&e.target.closest&&e.target.closest('[role="tab"]');if(!b)return;const ord=["t","l","f"],i=ord.indexOf(b.dataset.v);let n=-1;if(e.key==="ArrowRight")n=(i+1)%ord.length;else if(e.key==="ArrowLeft")n=(i+ord.length-1)%ord.length;else if(e.key==="Home")n=0;else if(e.key==="End")n=ord.length-1;if(n<0)return;e.preventDefault();S.tab=ord[n];save();tab()});
 $("bkp").onclick=()=>{R.classList.remove("pv");$("fab").focus()};
 function dlJson(o,n){const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(o,null,1)],{type:"application/json"}));a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 dr.addEventListener("input",e=>{const el=e.target,k=el.dataset.k;if(k){S[k]=el.type=="checkbox"?el.checked:el.type=="range"?+el.value:el.value;if(el.type=="range"&&el.previousElementSibling)el.previousElementSibling.querySelector("output").textContent=el.value;save();look()}
@@ -2557,7 +2629,9 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
  "use strict";
  const API="https://aryan.aryanavery1488.workers.dev";
  const TURNSTILE_SITE_KEY="0x4AAAAAAFxjFPZsow074p5g";
- const USER_KEY="plremix:backend-user:v1";
+ const USER_KEY="plremix:backend-user:v1",ERR_KEY="plremix:error-reports";
+ const reportsOn=()=>{try{return localStorage.getItem(ERR_KEY)==="1"}catch(e){return false}};
+ {const cb=document.getElementById("pr-err-optin");if(cb){cb.checked=reportsOn();cb.addEventListener("change",()=>{try{localStorage.setItem(ERR_KEY,cb.checked?"1":"0")}catch(e){cb.checked=false}})}}
  const form=document.getElementById("pr-support-form");
  const status=document.getElementById("pr-support-status");
  let widgetId=null,turnstileLoading=false;
@@ -2608,7 +2682,8 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
   script.onerror=()=>{turnstileLoading=false;if(status)status.textContent="Could not load human verification. Check your connection and refresh."};
   document.head.appendChild(script);
  }
- loadTurnstile();
+ /* Lazy: nothing is requested from Cloudflare until the person actually opens or touches the Support form. */
+ if(form){let started=false;const go=()=>{if(started)return;started=true;loadTurnstile()};form.addEventListener("focusin",go,{once:true});form.addEventListener("pointerdown",go,{once:true});const sec=document.getElementById("v-support");if(sec&&"IntersectionObserver" in window){const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){io.disconnect();go()}});io.observe(sec)}}
  if(form){
   form.addEventListener("submit",async e=>{
    e.preventDefault();
@@ -2642,13 +2717,13 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
  }
  async function sendError(message,type){
   try{
-   const body={message:String(message||"Unknown application error").slice(0,1500),type:String(type||"application").slice(0,80),page:location.pathname.slice(0,200)};
+   const body={message:String(message||"Unknown application error").replace(/["“‘][^"”’]{12,}["”’]/g,"\"…\"").slice(0,400),type:String(type||"application").slice(0,80),page:location.pathname.slice(0,200)};
    const id=getUserId();if(id)body.userId=id;
    const res=await fetch(API+"/api/errors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),keepalive:true});if(res&&res.status===404){try{localStorage.removeItem(USER_KEY)}catch(e){}}
   }catch(e){/* Reporting must never interfere with the app. */}
  }
  let reportCount=0,lastReport=0;
- function report(message,type){const now=Date.now();if(reportCount>=10||now-lastReport<30000)return;reportCount++;lastReport=now;sendError(message,type)}
+function report(message,type){if(!reportsOn())return;const now=Date.now();if(reportCount>=10||now-lastReport<30000)return;reportCount++;lastReport=now;sendError(message,type)}
  window.addEventListener("error",e=>{if(e&&e.message)report(e.message,"window.error")});
  window.addEventListener("unhandledrejection",e=>{const r=e&&e.reason;report(r&&r.message?r.message:String(r||"Unhandled promise rejection"),"unhandledrejection")});
 })();
@@ -2664,7 +2739,7 @@ const g=id=>document.getElementById(id);let cur="home";
 const nav=document.createElement("nav");nav.id="sn";nav.setAttribute("aria-label","Main navigation");
 nav.innerHTML=PRIMARY.filter(x=>x[0]!=="more").map(([id,n,ic])=>`<button type="button" data-go="${id}"><span aria-hidden="true">${ic}</span><span>${n}</span></button>`).join("")+
  `<details id="sn-more"><summary><span aria-hidden="true">•••</span><span>More</span></summary><div class="sn-sub">${EXTRA.map(([id,n,ic])=>`<button type="button" data-go="${id}"><span aria-hidden="true">${ic}</span><span>${n}</span></button>`).join("")}</div></details>`;
- document.body.prepend(nav);
+ {const sk=document.getElementById("skip");if(sk&&sk.nextSibling)document.body.insertBefore(nav,sk.nextSibling);else document.body.prepend(nav);if(sk)sk.addEventListener("click",e=>{e.preventDefault();const m=document.getElementById("main");if(m)m.focus()})}
  const fmt=t=>t?new Date(t).toLocaleString():"";
  function recentJobs(){try{const d=JSON.parse(localStorage.getItem("plremix:xfer")||"null");return d&&Array.isArray(d.jobs)?d.jobs.slice().sort((a,b)=>(b.created||0)-(a.created||0)):[]}catch(e){return[]}}
  function homeDraw(){const b=g("homeb");if(!b)return;
