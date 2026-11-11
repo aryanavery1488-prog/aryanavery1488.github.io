@@ -8,7 +8,7 @@
 <title>Playlist Remixer · Admin</title>
 <style>
 :root{color-scheme:dark;--bg:#101216;--panel:#191d24;--panel2:#202630;--line:#303844;--text:#edf1f7;--muted:#aab4c2;--accent:#8eb7ff;--good:#8ed6a2;--warn:#f1c27d;--bad:#ff9999}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:1180px;margin:0 auto;padding:28px 18px 60px}h1{font-size:25px;margin:0 0 5px}h2{font-size:19px;margin:0 0 14px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}input,select,textarea,button{font:inherit;border-radius:9px;border:1px solid var(--line);padding:10px 12px;background:var(--panel2);color:var(--text)}input[type=password]{width:min(480px,100%)}button{cursor:pointer;background:#2a3b55;border-color:#405c82}button.secondary{background:var(--panel2)}button:disabled{opacity:.5;cursor:not-allowed}.status{min-height:22px;margin-top:8px;color:var(--muted)}.status.err{color:var(--bad)}.status.ok{color:var(--good)}.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button[aria-pressed=true]{outline:2px solid var(--accent)}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:740px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:600}td.message{white-space:pre-wrap;overflow-wrap:anywhere;max-width:460px}.pill{display:inline-block;border:1px solid var(--line);padding:2px 8px;border-radius:99px;text-transform:capitalize;color:var(--muted)}.pill.open{color:var(--warn)}.pill.pending{color:var(--accent)}.pill.closed{color:var(--good)}.small{font-size:12px}.hidden{display:none!important}.danger{color:var(--bad)}.ticket-detail{background:var(--panel2);padding:14px;border-radius:10px}.event{border-left:2px solid var(--line);padding:5px 0 8px 12px;margin:8px 0}.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}.meta{overflow-wrap:anywhere;background:#151a21;padding:9px;border-radius:8px}.search{min-width:min(280px,100%);flex:1}@media(max-width:600px){main{padding:18px 12px 40px}.panel{padding:14px}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{max-width:1180px;margin:0 auto;padding:28px 18px 60px}h1{font-size:25px;margin:0 0 5px}h2{font-size:19px;margin:0 0 14px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}input,select,textarea,button{font:inherit;border-radius:9px;border:1px solid var(--line);padding:10px 12px;background:var(--panel2);color:var(--text)}input[type=password]{width:min(480px,100%)}button{cursor:pointer;background:#2a3b55;border-color:#405c82}button.secondary{background:var(--panel2)}button:disabled{opacity:.5;cursor:not-allowed}.status{min-height:22px;margin-top:8px;color:var(--muted)}.status.err{color:var(--bad)}.status.ok{color:var(--good)}.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button[aria-pressed=true]{outline:2px solid var(--accent)}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:740px}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:var(--muted);font-weight:600}td.message{white-space:pre-wrap;overflow-wrap:anywhere;max-width:460px}.pill{display:inline-block;border:1px solid var(--line);padding:2px 8px;border-radius:99px;text-transform:capitalize;color:var(--muted)}.pill.open{color:var(--warn)}.pill.pending{color:var(--accent)}.pill.closed{color:var(--good)}.pill.online{color:var(--good);border-color:var(--good)}.pill.away{color:var(--warn);border-color:var(--warn)}.pill.offline{color:var(--muted)}.small{font-size:12px}.hidden{display:none!important}.danger{color:var(--bad)}.ticket-detail{background:var(--panel2);padding:14px;border-radius:10px}.event{border-left:2px solid var(--line);padding:5px 0 8px 12px;margin:8px 0}.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}.meta{overflow-wrap:anywhere;background:#151a21;padding:9px;border-radius:8px}.search{min-width:min(280px,100%);flex:1}@media(max-width:600px){main{padding:18px 12px 40px}.panel{padding:14px}}
 </style>
 </head>
 <body>
@@ -23,9 +23,20 @@
 <section class="panel hidden" id="dashboard">
  <div class="row" style="justify-content:space-between"><h2 style="margin:0">Dashboard</h2><div class="row"><button class="secondary" id="refresh">Refresh</button><button class="secondary" id="logout">Sign out</button></div></div>
  <div id="dash-status" class="status" role="status" aria-live="polite"></div>
- <div class="tabs" role="group" aria-label="Dashboard sections"><button id="tickets-tab" aria-pressed="true">Support tickets</button><button id="errors-tab" class="secondary" aria-pressed="false">Error reports</button></div>
+ <div class="tabs" role="group" aria-label="Dashboard sections"><button id="tickets-tab" aria-pressed="true">Support tickets</button><button id="errors-tab" class="secondary" aria-pressed="false">Error reports</button><button id="sessions-tab" class="secondary" aria-pressed="false">Active users</button></div>
  <div id="tickets-view"><div class="row" style="margin-bottom:12px"><label for="ticket-filter">Status</label><select id="ticket-filter"><option value="all">All</option><option value="open">Open</option><option value="pending">Pending</option><option value="closed">Closed</option></select><input id="ticket-search" class="search" type="search" placeholder="Search subject, message, ticket ID, or user ID"><span class="muted small" id="ticket-count"></span></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>Subject / message</th><th>User ID</th><th>Status</th><th>Created</th><th>Update / history</th></tr></thead><tbody id="tickets-body"><tr><td colspan="6" class="muted">Connect and refresh to load tickets.</td></tr></tbody></table></div></div>
  <div id="errors-view" class="hidden"><div class="tablewrap"><table><thead><tr><th>ID</th><th>Type</th><th>Message</th><th>Page</th><th>User ID</th><th>Created</th></tr></thead><tbody id="errors-body"><tr><td colspan="6" class="muted">No reports loaded.</td></tr></tbody></table></div></div>
+ <div id="sessions-view" class="hidden">
+  <p class="muted small">Live browser sessions, not verified people. Online means a visible tab checked in within 90 seconds. Hidden tabs are marked Away; closed or expired sessions are Offline. Device labels are self-reported/coarse and can be inaccurate.</p>
+  <div class="meta-grid" id="session-stats">
+   <div class="meta"><strong>Online sessions</strong><br><span id="stat-online-sessions">—</span></div>
+   <div class="meta"><strong>Unique users online</strong><br><span id="stat-online-users">—</span></div>
+   <div class="meta"><strong>Sessions today</strong><br><span id="stat-today-sessions">—</span></div>
+   <div class="meta"><strong>Unique users today</strong><br><span id="stat-today-users">—</span></div>
+  </div>
+  <div class="row" style="margin:12px 0"><label for="session-filter">Presence</label><select id="session-filter"><option value="all">All</option><option value="online">Online</option><option value="away">Away</option><option value="offline">Offline</option></select><input id="session-search" class="search" type="search" placeholder="Search session, user, browser, page, IP or location"><span class="muted small" id="session-count"></span></div>
+  <div class="tablewrap"><table style="min-width:1500px"><thead><tr><th>Status</th><th>Session / user</th><th>Current page</th><th>Browser / OS</th><th>Screen / locale</th><th>Approx. location / IP</th><th>First seen</th><th>Last seen</th></tr></thead><tbody id="sessions-body"><tr><td colspan="8" class="muted">Connect to load sessions.</td></tr></tbody></table></div>
+ </div>
 </section>
 <p class="muted small">Use this page only on a trusted device. Signing out clears the secret from this page's memory. Do not share your secret or screenshots containing it.</p>
 </main>
@@ -34,9 +45,9 @@
  "use strict";
  const API="https://aryan.aryanavery1488.workers.dev";
  const $=id=>document.getElementById(id);
- let adminSecret="",activeView="tickets",tickets=[],errors=[];
+ let adminSecret="",activeView="tickets",tickets=[],errors=[],sessions=[],sessionsTimer=null;
  const esc=value=>String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
- const date=value=>value?new Date(value).toLocaleString():"—";
+ const date=value=>{if(value===null||value===undefined||value==="")return "—";const n=typeof value==="number"?value:Number(value);const d=typeof value==="number"||(/^\\d{10,13}$/.test(String(value)))?new Date(n<1e12?n*1000:n):new Date(value);return Number.isNaN(d.getTime())?"—":d.toLocaleString()};
  function setStatus(id,message,type=""){const el=$(id);el.textContent=message;el.className="status"+(type?" "+type:"")}
  async function api(path,options={}){
   const response=await fetch(API+path,{...options,headers:{Accept:"application/json",...(options.headers||{}),Authorization:"Bearer "+adminSecret}});
@@ -47,11 +58,11 @@
  async function connect(){
   const input=$("secret").value.trim();if(!input){setStatus("login-status","Enter your admin secret.","err");return}
   adminSecret=input;setStatus("login-status","Checking credentials…");
-  try{await api("/api/tickets?limit=1");$("login-panel").classList.add("hidden");$("dashboard").classList.remove("hidden");await refresh();}
+  try{await api("/api/tickets?limit=1");$("login-panel").classList.add("hidden");$("dashboard").classList.remove("hidden");await refresh();if(!sessionsTimer)sessionsTimer=setInterval(()=>{if(!document.hidden&&adminSecret&&activeView==="sessions")loadSessions().catch(e=>setStatus("dash-status",e.message,"err"))},20000);}
   catch(error){adminSecret="";setStatus("login-status",error.message,"err")}
  }
- function logout(){adminSecret="";tickets=[];errors=[];$("secret").value="";$("tickets-body").textContent="";$("errors-body").textContent="";$("dashboard").classList.add("hidden");$("login-panel").classList.remove("hidden");setStatus("login-status","Signed out.")}
- function showView(view){activeView=view;$("tickets-view").classList.toggle("hidden",view!=="tickets");$("errors-view").classList.toggle("hidden",view!=="errors");$("tickets-tab").setAttribute("aria-pressed",String(view==="tickets"));$("errors-tab").setAttribute("aria-pressed",String(view==="errors"));$("tickets-tab").classList.toggle("secondary",view!=="tickets");$("errors-tab").classList.toggle("secondary",view!=="errors")}
+ function logout(){if(sessionsTimer){clearInterval(sessionsTimer);sessionsTimer=null}adminSecret="";tickets=[];errors=[];sessions=[];$("secret").value="";$("tickets-body").textContent="";$("errors-body").textContent="";$("dashboard").classList.add("hidden");$("login-panel").classList.remove("hidden");setStatus("login-status","Signed out.")}
+ function showView(view){activeView=view;$("tickets-view").classList.toggle("hidden",view!=="tickets");$("errors-view").classList.toggle("hidden",view!=="errors");$("sessions-view").classList.toggle("hidden",view!=="sessions");for(const [v,id] of [["tickets","tickets-tab"],["errors","errors-tab"],["sessions","sessions-tab"]]){$(id).setAttribute("aria-pressed",String(view===v));$(id).classList.toggle("secondary",view!==v)}if(view==="sessions")loadSessions().catch(error=>setStatus("dash-status",error.message,"err"))}
  function drawTickets(){
   const filter=$("ticket-filter").value;const query=$("ticket-search").value.trim().toLowerCase();
   const rows=tickets.filter(t=>(filter==="all"||t.status===filter)&&(!query||[t.id,t.subject,t.message,t.user_id].some(v=>String(v??"").toLowerCase().includes(query))));
@@ -78,6 +89,38 @@
  function drawErrors(){
   $("errors-body").innerHTML=errors.length?errors.map(e=>`<tr><td>#${esc(e.id)}</td><td>${esc(e.error_type)}</td><td class="message">${esc(e.error_message)}</td><td>${esc(e.page)}</td><td class="small">${esc(e.user_id||"—")}</td><td class="small">${esc(date(e.created_at))}</td></tr>`).join(""):`<tr><td colspan="6" class="muted">No error reports found.</td></tr>`;
  }
+ function presenceOf(s){
+  if(s.presence)return s.presence;
+  if(s.ended_at)return "offline";
+  const last=Number(s.last_seen||0),now=Math.floor(Date.now()/1000);
+  if(last>=now-90)return Number(s.is_visible)===1?"online":"away";
+  return "offline";
+ }
+ function drawSessions(){
+  const filter=$("session-filter").value,query=$("session-search").value.trim().toLowerCase();
+  const rows=sessions.filter(s=>{
+   const status=presenceOf(s);
+   const text=[s.session_id,s.user_id,s.current_page,s.browser,s.os,s.screen_size,s.timezone,s.language,s.ip_address,s.city,s.region,s.country].join(" ").toLowerCase();
+   return (filter==="all"||status===filter)&&(!query||text.includes(query));
+  });
+  $("session-count").textContent=rows.length+" shown · "+sessions.length+" loaded";
+  $("sessions-body").innerHTML=rows.length?rows.map(s=>{
+   const status=presenceOf(s),place=[s.city,s.region,s.country].filter(Boolean).join(", ")||"Not available";
+   const locale=[s.timezone,s.language].filter(Boolean).join(" · ")||"—";
+   const ua=s.user_agent||"Not recorded";
+   return `<tr title="${esc(ua)}"><td><span class="pill ${esc(status)}">${esc(status)}</span></td><td class="small"><strong>${esc(String(s.session_id||"").slice(0,8))}…</strong><div>${esc(String(s.user_id||"").slice(0,8))}…</div></td><td>${esc(s.current_page||"—")}</td><td>${esc(s.browser||"Unknown")}<div class="muted small">${esc(s.os||"Unknown")}</div></td><td>${esc(s.screen_size||"—")}<div class="muted small">${esc(locale)}</div></td><td>${esc(place)}<div class="muted small">${esc(s.ip_address||"IP not available")}</div></td><td class="small">${esc(date(s.started_at))}</td><td class="small">${esc(date(s.last_seen))}</td></tr>`;
+  }).join(""):`<tr><td colspan="8" class="muted">No sessions match this filter.</td></tr>`;
+ }
+ async function loadSessions(){
+  const data=await api("/api/admin/sessions?limit=250");
+  sessions=Array.isArray(data.sessions)?data.sessions:[];
+  const st=data.stats||{};
+  $("stat-online-sessions").textContent=Number(st.online_sessions||0);
+  $("stat-online-users").textContent=Number(st.online_users||0);
+  $("stat-today-sessions").textContent=Number(st.sessions_today||0);
+  $("stat-today-users").textContent=Number(st.users_today||0);
+  drawSessions();
+ }
  async function updateTicket(id){
   const select=$("tickets-body").querySelector(`[data-status-id="${CSS.escape(id)}"]`);if(!select)return;
   try{await api("/api/tickets/"+encodeURIComponent(id),{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:select.value})});setStatus("dash-status","Ticket #"+id+" updated.","ok");await loadTickets();}
@@ -85,8 +128,9 @@
  }
  async function loadTickets(){const data=await api("/api/tickets?limit=100");tickets=Array.isArray(data.tickets)?data.tickets:[];drawTickets()}
  async function loadErrors(){const data=await api("/api/errors?limit=100");errors=Array.isArray(data.errors)?data.errors:[];drawErrors()}
- async function refresh(){setStatus("dash-status","Loading dashboard…");try{await Promise.all([loadTickets(),loadErrors()]);setStatus("dash-status","Dashboard updated.","ok")}catch(error){setStatus("dash-status",error.message,"err")}}
- $("connect").addEventListener("click",connect);$("secret").addEventListener("keydown",e=>{if(e.key==="Enter")connect()});$("logout").addEventListener("click",logout);$("refresh").addEventListener("click",refresh);$("tickets-tab").addEventListener("click",()=>showView("tickets"));$("errors-tab").addEventListener("click",()=>showView("errors"));$("ticket-filter").addEventListener("change",drawTickets);$("ticket-search").addEventListener("input",drawTickets);
+ async function refresh(){setStatus("dash-status","Loading dashboard…");try{await Promise.all([loadTickets(),loadErrors(),loadSessions()]);setStatus("dash-status","Dashboard updated.","ok")}catch(error){setStatus("dash-status",error.message,"err")}}
+ $("connect").addEventListener("click",connect);$("secret").addEventListener("keydown",e=>{if(e.key==="Enter")connect()});$("logout").addEventListener("click",logout);$("refresh").addEventListener("click",refresh);$("tickets-tab").addEventListener("click",()=>showView("tickets"));$("errors-tab").addEventListener("click",()=>showView("errors"));$("sessions-tab").addEventListener("click",()=>showView("sessions"));$("ticket-filter").addEventListener("change",drawTickets);$("ticket-search").addEventListener("input",drawTickets);$("session-filter").addEventListener("change",drawSessions);$("session-search").addEventListener("input",drawSessions);
+ document.addEventListener("visibilitychange",()=>{if(document.hidden)return;if(adminSecret&&activeView==="sessions")loadSessions().catch(e=>setStatus("dash-status",e.message,"err"))});
 })();
 </script>
 </body>
