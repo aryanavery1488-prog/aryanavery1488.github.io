@@ -185,6 +185,7 @@ main details>summary{min-height:24px;padding:2px 0;line-height:1.5}
 <main id="main" tabindex="-1">
 <h1>🎧 Playlist Remixer</h1>
 <p class="sub" data-views="home">Import playlists from supported music services, organize your local music library, and build smarter playlists with the metadata you already have.</p>
+<p class="hint" id="session-privacy-note" style="margin:0 0 14px">Session information notice: while this page is open, Playlist Remixer sends a random browser ID and per-tab session ID, the current app section, basic browser/device details (browser, operating system, screen size, language and timezone), and your IP address with approximate Cloudflare network location to its server for live session monitoring and support. Location is approximate and is not GPS. This does not collect keystrokes, passwords, cookies, clipboard contents, camera/microphone access, private files, or browsing history. Session records older than 30 days are pruned when a new session starts.</p>
 
 <p class="hint" id="stat" role="status" style="margin:0 0 10px"></p>
 
@@ -2847,12 +2848,81 @@ $("abk-file").onchange=e=>{const f=e.target.files[0];e.target.value="";if(f)impo
  const getUserId=()=>{try{return localStorage.getItem(USER_KEY)||""}catch(e){return ""}};
  const setUserId=id=>{try{localStorage.setItem(USER_KEY,id)}catch(e){throw new Error("Browser storage is unavailable. Allow site data and try again.")}};
  async function ensureUser(){
-  let id=getUserId();if(id)return id;
+  let id=getUserId();if(id&&/^[0-9a-f-]{36}$/i.test(id))return id;
+  if(id){try{localStorage.removeItem(USER_KEY)}catch(e){}}
   const r=await fetch(API+"/api/users",{method:"POST",headers:{Accept:"application/json"}});
   const d=await r.json().catch(()=>({}));
   if(!r.ok||!d.userId)throw new Error(d.error||"Could not register this browser with the support service.");
   setUserId(d.userId);return d.userId;
  }
+
+ /* Transparent session presence. A random ID is stored per tab, not a device fingerprint. */
+ const SESSION_KEY="plremix:session:v1";
+ let sessionId="",sessionUserId="",sessionStarted=false,heartbeatTimer=null,lastPage="",currentPageOverride="";
+ const pageName=()=>{
+  const v=String(currentPageOverride||((location.hash||"#home").slice(1))||window.__prSec||"home").toLowerCase();
+  return ["home","transfer","mymusic","tools","sync","insights","history","backups","support","appearance","settings","games"].includes(v)?v:"home";
+ };
+ const browserOs=()=>{
+  const ua=navigator.userAgent||"";
+  let browser=/Edg\//.test(ua)?"Edge":/OPR\//.test(ua)?"Opera":/Firefox\//.test(ua)?"Firefox":/Chrome\//.test(ua)?"Chrome":/Safari\//.test(ua)?"Safari":"Other";
+  let os=/Windows/i.test(ua)?"Windows":/(iPhone|iPad|iPod)/i.test(ua)?"iOS":/Android/i.test(ua)?"Android":/(Mac OS X|Macintosh)/i.test(ua)?"macOS":/CrOS/i.test(ua)?"ChromeOS":/Linux/i.test(ua)?"Linux":"Other";
+  return {browser,os};
+ };
+ const sessionBody=(visible)=> {
+  const {browser,os}=browserOs();
+  return {
+   userId:sessionUserId,sessionId,currentPage:pageName(),browser,os,
+   screenSize:(screen&&screen.width&&screen.height)?screen.width+"x"+screen.height:"",
+   timezone:(Intl.DateTimeFormat().resolvedOptions().timeZone||"").slice(0,80),
+   language:String(navigator.language||"").slice(0,35),
+   visible:visible!==false
+  };
+ };
+ async function sessionPost(path,body,keepalive=false){
+  return fetch(API+path,{
+   method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},
+   body:JSON.stringify(body),keepalive
+  });
+ }
+ async function startSession(){
+  if(sessionStarted||location.protocol!=="https:"||navigator.onLine===false)return;
+  sessionStarted=true;
+  try{
+   sessionUserId=await ensureUser();
+   try{sessionId=sessionStorage.getItem(SESSION_KEY)||""}catch(e){}
+   if(!/^[0-9a-f-]{36}$/i.test(sessionId)){sessionId=crypto.randomUUID();try{sessionStorage.setItem(SESSION_KEY,sessionId)}catch(e){}}
+   let r=await sessionPost("/api/sessions/start",sessionBody(document.visibilityState!=="hidden"));
+   if(r.status===404){
+    try{localStorage.removeItem(USER_KEY)}catch(e){}
+    sessionUserId=await ensureUser();
+    r=await sessionPost("/api/sessions/start",sessionBody(document.visibilityState!=="hidden"));
+   }
+   if(!r.ok)throw new Error("Session registration failed ("+r.status+")");
+   sessionStarted=true;lastPage=pageName();
+   if(heartbeatTimer)clearInterval(heartbeatTimer);
+   heartbeatTimer=setInterval(sendHeartbeat,30000);
+  }catch(e){sessionStarted=false}
+ }
+ async function sendHeartbeat(){
+  if(!sessionStarted||!sessionId||!sessionUserId||navigator.onLine===false)return;
+  try{
+   const r=await sessionPost("/api/sessions/heartbeat",sessionBody(document.visibilityState!=="hidden"));
+   if(r.status===404){sessionStarted=false;startSession()}
+  }catch(e){/* Session reporting must never interfere with the music app. */}
+ }
+ function pageChanged(){
+  const p=pageName();if(p!==lastPage){lastPage=p;sendHeartbeat()}
+ }
+ document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sendHeartbeat();else sendHeartbeat()});
+ window.addEventListener("plremix:page",e=>{if(e&&e.detail&&typeof e.detail.page==="string")currentPageOverride=e.detail.page;pageChanged()});
+ window.addEventListener("hashchange",()=>{currentPageOverride=(location.hash||"#home").slice(1);pageChanged()});
+ window.addEventListener("online",()=>{if(!sessionStarted)startSession();else sendHeartbeat()});
+ window.addEventListener("pagehide",()=>{
+  if(!sessionStarted||!sessionId||!sessionUserId)return;
+  sessionPost("/api/sessions/end",{userId:sessionUserId,sessionId},true).catch(()=>{});
+ });
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",startSession,{once:true});else startSession();
  function renderTurnstile(){
   if(!form)return;
   const mount=document.getElementById("pr-turnstile");
@@ -3079,7 +3149,7 @@ function libDraw(){const b=g("libb");if(!b)return;libRefreshCache();
  <h3 style="font-size:15px;margin:12px 0 4px">Storage</h3><p style="margin:0">Library storage: <b>${st}</b>. Spotify’s sign-in is kept in this browser tab’s session storage (removed when the tab closes or you press Disconnect). YouTube’s sign-in is held in memory only. Apple Music’s developer token and sign-in are held in memory by this app; Apple’s MusicKit script may keep its own sign-in record in the browser.</p>`}
 
  function show(v,focus,push){if(v==="appearance"){const more=g("sn-more");if(more)more.open=false;const f=g("fab");if(f)f.click();return}
-  if(!VALID.has(v))v="home";cur=v;if(v!=="games"&&window.PRGames)PRGames.stop();const lab=(PRIMARY.concat(EXTRA).find(x=>x[0]===v)||[])[1];window.__prSec=v==="home"?"":(lab||"");document.title=(window.__prSec?window.__prSec+" – ":"")+(window.__prBase||"Playlist Remixer");
+  if(!VALID.has(v))v="home";cur=v;try{window.dispatchEvent(new CustomEvent("plremix:page",{detail:{page:v}}))}catch(e){}if(v!=="games"&&window.PRGames)PRGames.stop();const lab=(PRIMARY.concat(EXTRA).find(x=>x[0]===v)||[])[1];window.__prSec=v==="home"?"":(lab||"");document.title=(window.__prSec?window.__prSec+" – ":"")+(window.__prBase||"Playlist Remixer");
   document.querySelectorAll("[data-views]").forEach(e=>{const l=e.dataset.views.split(" ");e.hidden=!l.includes(v)});
   const primary=EXTRA.some(x=>x[0]===v)?"more":v;
   nav.querySelectorAll("button[data-go]").forEach(b=>{if(b.dataset.go===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
